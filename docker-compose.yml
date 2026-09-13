@@ -32,9 +32,7 @@ services:
       dockerfile: Dockerfile
     container_name: skillswap-backend
     env_file:
-      - ./backend/.env
-    environment:
-      - DB_HOST=postgres
+      - .env
     ports:
       - "3000:3000"
     depends_on:
@@ -59,9 +57,7 @@ services:
       dockerfile: Dockerfile
     container_name: skillswap-frontend
     env_file:
-      - ./frontend/.env
-    environment:
-      - VITE_API_URL=http://backend:3000
+      - .env
     ports:
       - "5173:5173"
     depends_on:
