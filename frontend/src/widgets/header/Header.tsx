@@ -41,7 +41,7 @@ export function Header() {
       categories.map((category) => ({
         title: category.name,
         iconName: "idea",
-        iconBackgroundColor: getCategoryColorById(category.id),
+        iconBackgroundColor: getCategoryColorById(category.id, categories),
         skills: category.subcategories.map((subcategory) => subcategory.name),
       })),
     [categories],
