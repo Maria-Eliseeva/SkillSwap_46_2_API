@@ -47,7 +47,7 @@ export class SkillsService {
   }
 
   async findAll(dto: FindSkillsDto) {
-    const { page, limit, search } = dto;
+    const { page = 1, limit = 20, search = '' } = dto;
 
     const query = this.skillsRepository
       .createQueryBuilder('skill')
@@ -80,7 +80,8 @@ export class SkillsService {
         avatar: skill.user.avatar,
         age: this.calculateAge(skill.user.birthdate),
         city: skill.user.city
-          ? { id: skill.user.city.id, name: skill.user.city.name } : null,
+          ? { id: skill.user.city.id, name: skill.user.city.name }
+          : null,
         wantToLearn: skill.user.wantToLearn.map((c) => ({
           id: c.id,
           name: c.name,
@@ -95,11 +96,23 @@ export class SkillsService {
     };
   }
 
-    private calculateAge(birthdate: Date | null): number | null {
+  private calculateAge(birthdate: Date | null): number | null {
     if (!birthdate) return null;
-    const diff = Date.now() - new Date(birthdate).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  } 
+
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age -= 1;
+    }
+
+    return age >= 0 ? age : null;
+  }
 
   async findOne(id: string) {
     const skill = await this.skillsRepository.findOne({
@@ -133,7 +146,9 @@ export class SkillsService {
         avatar: skill.user.avatar,
         age: this.calculateAge(skill.user.birthdate),
         about: skill.user.about,
-        city: skill.user.city ? { id: skill.user.city.id, name: skill.user.city.name } : null,
+        city: skill.user.city
+          ? { id: skill.user.city.id, name: skill.user.city.name }
+          : null,
         wantToLearn: (skill.user.wantToLearn || []).map((c) => ({
           id: c.id,
           name: c.name,

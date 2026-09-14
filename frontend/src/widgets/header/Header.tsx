@@ -9,13 +9,14 @@ import { Popover } from "../../shared/ui/popover";
 import { ProfileMenu } from "../../shared/ui/profile-menu";
 import { Search } from "../../shared/ui/search";
 import { SkillCategoryGroup } from "../../shared/ui/skill-category-group";
+import type { TSkillCategoryProps } from "../../shared/ui/skill-category/types";
 import { DeveloperCardGroup } from "../developer-card";
 import styles from "./header.module.css";
-import { logout } from "../../services/auth/slice";
+import { fetchLogout } from "../../services/auth/actions";
 import { HeaderIcons } from "../../shared/ui/header-icons";
 import { developers } from "../../shared/constants/developers";
  
-const allCategories = [
+const allCategories: TSkillCategoryProps[] = [
   {
     title: "Бизнес и карьера",
     iconName: "briefcase",
@@ -123,7 +124,7 @@ export function Header() {
   };
  
   const handleLogoutClick = async () => {
-    dispatch(logout());
+    await dispatch(fetchLogout());
     window.location.href = "/";
   };
  
