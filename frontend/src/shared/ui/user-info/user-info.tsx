@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useState, useEffect, useMemo, type FC } from "react";
 import clsx from "clsx";
 import { Avatar } from "../avatar";
 import { BasicInput } from "../input/basic-input";
@@ -9,9 +9,10 @@ import { Icon } from "../icon";
 import { PasswordInput } from "../input";
 import type { UserInfoProps } from "./types";
 import type { OptionType } from "../dropdown/types";
-import { ECity } from "../../constants/cities";
 import { useDispatch } from "../../../services/store";
 import { updatePassword } from "../../../services/auth/actions";
+import { getCities, type ICity } from "../../../api/cityApi";
+import { useDebounce } from "../../hooks/useDebounce";
 import styles from "./user-info.module.css";
 
 const genderOptions: OptionType[] = [
@@ -19,11 +20,6 @@ const genderOptions: OptionType[] = [
   { value: "female", title: "Женский" },
   { value: "other", title: "Другой" },
 ];
-
-const cityOptions: OptionType[] = Object.entries(ECity).map(([key, value]) => ({
-  value: key,
-  title: value,
-}));
 
 const validatePassword = (password: string): string => {
   if (!password) {
@@ -34,7 +30,7 @@ const validatePassword = (password: string): string => {
     return "Минимум 8 символов";
   }
 
-  if (!/[A-Z]/.test(password)) {
+  if (!/\p{Lu}/u.test(password)) {
     return "Должна быть заглавная буква";
   }
 
@@ -65,8 +61,53 @@ export const UserInfo: FC<UserInfoProps> = ({
   const [newPassword, setNewPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  const selectedCityOption =
-    cityOptions.find((option) => option.title === city) ?? null;
+  const [citySearch, setCitySearch] = useState("");
+  const [cities, setCities] = useState<ICity[]>([]);
+
+  const debouncedCitySearch = useDebounce(citySearch, 300);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadCities = async () => {
+      try {
+        const results = await getCities(debouncedCitySearch || undefined);
+        if (!isCancelled) {
+          setCities(results);
+        }
+      } catch (err) {
+        console.error("Не удалось загрузить города", err);
+        if (!isCancelled) {
+          setCities([]);
+        }
+      }
+    };
+
+    loadCities();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedCitySearch]);
+
+  const cityOptions: OptionType[] = useMemo(
+    () => cities.map((c) => ({ value: c.id, title: c.name })),
+    [cities],
+  );
+
+  const selectedCityOption = useMemo(
+    () => cityOptions.find((option) => option.title === city) ?? null,
+    [cityOptions, city],
+  );
+
+  const handleCitySearchChange = (search: string) => {
+    setCitySearch(search);
+  };
+
+  const handleCityChange = (option: OptionType | null) => {
+    setCity(option?.title ?? "");
+    setCitySearch("");
+  };
 
   const handleSave = () => {
     onSave?.({
@@ -243,10 +284,11 @@ export const UserInfo: FC<UserInfoProps> = ({
             placeholder="Выберите город"
             options={cityOptions}
             selected={selectedCityOption}
-            onChange={(option) => setCity(option?.title ?? "")}
+            onChange={handleCityChange}
             error={Boolean(errors.city)}
             searchable
             searchPlaceholder="Введите город"
+            onSearchChange={handleCitySearchChange}
           />
         </div>
 
