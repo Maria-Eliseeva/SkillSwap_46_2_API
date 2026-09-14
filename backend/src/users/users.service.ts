@@ -22,10 +22,10 @@ export class UsersService {
     private readonly cityRepository: Repository<City>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
-  ) { }
+  ) {}
 
   async findAll(dto: FindUsersDto) {
-    const { page, limit } = dto;
+    const { page = 1, limit = 20 } = dto;
 
     const [data, total] = await this.userRepository.findAndCount({
       select: {
@@ -125,7 +125,7 @@ export class UsersService {
       relations: {
         city: true,
         wantToLearn: true,
-        favoriteSkills: true
+        favoriteSkills: true,
       },
     });
   }

@@ -37,7 +37,7 @@ export const AccountRegister: FC<AccountRegisterProps> = ({
       newErrors.password = "Пароль обязателен";
     } else if (password.length < 8) {
       newErrors.password = "Минимум 8 символов";
-    } else if (!/[A-Z]/.test(password)) {
+    } else if (!/\p{Lu}/u.test(password)) {
       newErrors.password = "Должна быть заглавная буква";
     } else if (!/[0-9]/.test(password)) {
       newErrors.password = "Должна быть цифра";
