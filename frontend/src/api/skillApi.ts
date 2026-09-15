@@ -66,12 +66,10 @@ export const getSkillById = (skillId: TId): Promise<TSkillResponse> => {
       }));
   }
 
-  return request<ApiResponse<ISkillBackend>>(`/skills/${skillId}`).then(
-    (response) => ({
-      status: response.status,
-      data: formatSkill(response.data),
-    }),
-  );
+  return request<ISkillBackend>(`/skills/${skillId}`).then((skill) => ({
+    status: true,
+    data: formatSkill(skill),
+  }));
 };
 
 //! ЗАПРПОСЫ С АВТОРИЗАЦИЕЙ
