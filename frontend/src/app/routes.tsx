@@ -10,6 +10,7 @@ import { ProfilePage } from "../pages/profil-page/profile-page";
 import { FavoritesPage } from "../pages/favorites-page/favorites-page";
 import { ProtectedLayout, PublicLayout } from "./route-layout";
 import { ScrollToTop } from "./scroll-to-top";
+import { SkillCreate } from "../pages/skill-create";
 
 /** КОНФИГУРАЦИЯ РОУТЕРА */
 export const router = createBrowserRouter([
@@ -42,7 +43,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/skill/create",
-            element: <SkillPage />,
+            element: <SkillCreate />,
           },
           {
             path: "/skill/edit/:id",

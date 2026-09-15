@@ -292,6 +292,7 @@ export function SkillPage() {
     }
 
     if (!selectedUser?.id || !currentUser.userSkill) {
+      navigate("/skill/create", { state:  { from: `/skill/${id}` } })
       return;
     }
 
