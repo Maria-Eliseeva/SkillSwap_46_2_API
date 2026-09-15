@@ -185,6 +185,8 @@ export function SkillPage() {
 
   const isOwnProfile = currentUser?.id === selectedUser?.id;
 
+  const hasSkill = (currentUser?.skills?.length ?? 0) > 0;
+
   const galleryImages =
     selectedSkill?.images && selectedSkill.images.length > 0
       ? selectedSkill.images
@@ -290,8 +292,6 @@ export function SkillPage() {
       navigate("/registration", { state: { from: `/skill/${id}` } });
       return;
     }
-
-    const hasSkill = (currentUser.skills?.length ?? 0) > 0;
 
     if (!selectedUser?.id || !hasSkill) {
       navigate("/skill/create", { state:  { from: `/skill/${id}` } })
@@ -565,7 +565,13 @@ export function SkillPage() {
         onClose={() => setIsOfferModalOpen(false)}
       >
         <CreateOffer
-          variant={currentUser ? "created" : "registration"}
+          variant={
+            !currentUser
+              ? "registration"
+              : hasSkill
+                ? "created"
+                : "noSkill"
+          }
           onActionClick={handleOfferModalAction}
         />
       </ModalUI>
