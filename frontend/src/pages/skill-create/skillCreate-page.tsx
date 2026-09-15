@@ -25,7 +25,7 @@ export const SkillCreate: FC = () => {
   const from = (location.state as { from?: string })?.from || "/";
 
   const handleSubmit = async () => {
-    
+
     setRegistrationError(null);
 
     try {
@@ -37,12 +37,12 @@ export const SkillCreate: FC = () => {
         }
 
         await dispatch(appendSkill(skillData)).unwrap();
-    
+
       navigate(from, {
         replace: true,
         state: { showRegistrationSuccess: true },
       });
-    
+
     } catch (err) {
         setRegistrationError(handleError(err).message);
     }
@@ -58,7 +58,7 @@ export const SkillCreate: FC = () => {
       setSkillDescription={setSkillDescription}
       skillImages={skillImages}
       setSkillImages={setSkillImages}
-      onBack={() => {}}
+      onBack={() => navigate(-1)}
       onSubmit={handleSubmit}
       errorText={registrationError || ""}
     />
