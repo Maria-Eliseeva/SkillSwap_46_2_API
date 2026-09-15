@@ -291,7 +291,9 @@ export function SkillPage() {
       return;
     }
 
-    if (!selectedUser?.id || !currentUser.userSkill) {
+    const hasSkill = (currentUser.skills?.length ?? 0) > 0;
+
+    if (!selectedUser?.id || !hasSkill) {
       navigate("/skill/create", { state:  { from: `/skill/${id}` } })
       return;
     }
@@ -301,7 +303,7 @@ export function SkillPage() {
     try {
       await dispatch(
         createRequestAction({
-          userSkill: currentUser.userSkill,
+          userSkill: currentUser.skills![0],
           requiredSkillUserId: selectedUser.id,
           message: `Хочу предложить обмен по навыку "${selectedSkill?.title ?? "Навык"}"`,
         }),
