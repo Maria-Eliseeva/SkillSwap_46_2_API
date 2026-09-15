@@ -30,6 +30,15 @@ const formatSkill = (skill: Partial<ISkillBackend> | null | undefined): ISkill =
   updatedAt: skill?.createdAt ?? new Date().toISOString(),
 });
 
+const toBackendPayload = (skill: TSkillData | Partial<TSkillData>) => {
+  const { skillSubcategory, category: _category, user: _user, ...rest } = skill;
+  return {
+    ...rest,
+    categoryId: skillSubcategory,
+  };
+};
+
+
 //! ЗАПРПОСЫ БЕЗ АВТОРИЗАЦИИ
 
 /** API: ПОЛУЧЕНИЕ ВСЕХ НАВЫКОВ */
@@ -88,7 +97,7 @@ export const addSkill = (skill: TSkillData): Promise<TSkillResponse> => {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(skill),
+    body: JSON.stringify(toBackendPayload(skill)),
   }).then((response) => ({
     status: response.status,
     data: formatSkill(response.data),
