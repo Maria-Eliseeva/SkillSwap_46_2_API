@@ -42,10 +42,6 @@ export const router = createBrowserRouter([
         element: <ProtectedLayout />,
         children: [
           {
-            path: "/skill/create",
-            element: <SkillCreate />,
-          },
-          {
             path: "/skill/edit/:id",
             element: <SkillPage />,
           },
@@ -87,6 +83,18 @@ export const router = createBrowserRouter([
       {
         path: "/login",
         element: <Login />,
+      },
+    ],
+  },
+
+  // Маршрут без общего Layout, но с проверкой авторизации
+  // (страница сама рендерит AuthLayout со своим хедером, как login/registration)
+  {
+    element: <ProtectedLayout />,
+    children: [
+      {
+        path: "/skill/create",
+        element: <SkillCreate />,
       },
     ],
   },
