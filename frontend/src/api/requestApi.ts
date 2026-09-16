@@ -13,6 +13,54 @@ interface ApiResponse<T> {
   data: T;
 }
 
+// формат, который реально принимает бэк (CreateRequestDto)
+interface ICreateRequestPayload {
+  offeredSkillId: TId;
+  requestedSkillId: TId;
+}
+
+// маппинг фронтового ISkillExchangeData -> CreateRequestDto бэка.
+// requestedSkillId обязателен: requiredSkillUserId бэку не подходит,
+// т.к. requestedSkillId ищется бэком как навык (skillRepo.findOne),
+// а не как пользователь.
+const formatCreateRequestPayload = (
+  data: ISkillExchangeData,
+): ICreateRequestPayload => {
+  if (!data.requestedSkillId) {
+    throw new Error(
+      "createRequest: не передан requestedSkillId (id запрашиваемого навыка)",
+    );
+  }
+
+  return {
+    offeredSkillId: data.userSkill,
+    requestedSkillId: data.requestedSkillId,
+  };
+};
+
+// реальная форма ответа бэка (entities/request.entity.ts) — без {status, data}
+// обёртки и без плоских полей fromUserId/toUserId/userSkill, которые ждёт фронт.
+interface IBackendRequestEntity {
+  id: TId;
+  status: TRequestStatus;
+  isRead: boolean;
+  createdAt: string;
+  sender: { id: TId };
+  receiver: { id: TId };
+  offeredSkill: { id: TId };
+  requestedSkill: { id: TId };
+}
+
+const mapBackendRequest = (raw: IBackendRequestEntity): ISkillExchange => ({
+  id: raw.id,
+  userSkill: raw.offeredSkill.id,
+  requiredSkillUserId: raw.receiver.id,
+  status: raw.status,
+  fromUserId: raw.sender.id,
+  toUserId: raw.receiver.id,
+  createdAt: raw.createdAt,
+});
+
 //POST create
 export const createRequest = (
   data: ISkillExchangeData,
@@ -31,13 +79,13 @@ export const createRequest = (
       }));
   }
 
-  return request<ApiResponse<ISkillExchange>>("/requests", {
+  return request<IBackendRequestEntity>("/requests", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(data),
-  }).then((res: { status: boolean; data: ISkillExchange }) => res.data);
+    body: JSON.stringify(formatCreateRequestPayload(data)),
+  }).then(mapBackendRequest);
 };
 
 //GET my
