@@ -237,6 +237,7 @@ export interface IWantToLearnCategory {
 export interface IPublicSkillCard {
   id: TId;
   title: string;
+  favoritesCount: number;
   createdAt: string;
   user: {
     id: TId;

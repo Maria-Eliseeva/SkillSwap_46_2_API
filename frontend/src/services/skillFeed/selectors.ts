@@ -16,7 +16,9 @@ export const selectNewestSkillFeed = createSelector(selectSkillFeed, (items) =>
 
 // TODO: бэкенд пока не отдаёт счётчик добавлений в избранное на уровне
 // списка навыков — используем "Новое" как временную замену "Популярному".
-export const selectPopularSkillFeed = selectNewestSkillFeed;
+export const selectPopularSkillFeed = createSelector(selectSkillFeed, (items) =>
+  [...items].sort((a, b) => b.favoritesCount - a.favoritesCount),
+);
 
 export const selectRecommendedSkillFeed = createSelector(
   selectSkillFeed,
