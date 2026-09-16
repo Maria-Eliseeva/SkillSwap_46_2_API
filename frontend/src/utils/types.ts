@@ -184,8 +184,9 @@ export type TRequestStatus =
 
 export interface ISkillExchange {
   id: TId;
-  userSkill: TId;
+  userSkill: TId; // offeredSkillId на бэке
   requiredSkillUserId: TId;
+  requestedSkillId?: TId; // requestedSkillId на бэке
   message?: string;
   createdAt: string;
   status?: TRequestStatus;

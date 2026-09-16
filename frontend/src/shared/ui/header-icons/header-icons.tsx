@@ -28,7 +28,7 @@ const MONTHS = [
 ] as const;
 
 type TNotificationWithRoute = TNotificationGroupItem & {
-  targetUserId?: string;
+  targetSkillId?: string;
 };
 
 const formatDateLabel = (value?: string) => {
@@ -123,7 +123,8 @@ export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
         isRead: readNotificationIds.includes(`received-${request.id}`),
         actionLabel: "Перейти",
         onActionClick: undefined,
-        targetUserId: request.fromUserId,
+        // предложенный отправителем навык, а не его userId
+        targetSkillId: request.userSkill,
       }));
 
     const acceptedStatuses = ["accepted", "inProgress", "done"];
@@ -141,7 +142,8 @@ export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
         isRead: readNotificationIds.includes(`sent-${request.id}`),
         actionLabel: "Перейти",
         onActionClick: undefined,
-        targetUserId: request.toUserId,
+        // навык, который я запрашивал, а не userId получателя
+        targetSkillId: request.requestedSkillId,
       }));
 
     return [...receivedNotifications, ...sentNotifications].filter(
@@ -187,8 +189,8 @@ export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
     close();
     forceUpdate();
 
-    if (notification.targetUserId) {
-      navigate(`/skill/${notification.targetUserId}`);
+    if (notification.targetSkillId) {
+      navigate(`/skill/${notification.targetSkillId}`);
       return;
     }
 

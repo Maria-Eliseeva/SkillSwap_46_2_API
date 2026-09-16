@@ -55,6 +55,7 @@ const mapBackendRequest = (raw: IBackendRequestEntity): ISkillExchange => ({
   id: raw.id,
   userSkill: raw.offeredSkill.id,
   requiredSkillUserId: raw.receiver.id,
+  requestedSkillId: raw.requestedSkill.id,
   status: raw.status,
   fromUserId: raw.sender.id,
   toUserId: raw.receiver.id,
