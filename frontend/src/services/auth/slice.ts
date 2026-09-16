@@ -24,6 +24,7 @@ type NormalizableUser = {
   aboutMe?: string;
   likesSkillsIds?: string[];
   userSkill?: string;
+  skills?: string[];
   interestedSkillsSubcategoriesIds?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -52,6 +53,7 @@ const normalizeCurrentUser = (
     )
       ? user.interestedSkillsSubcategoriesIds
       : [],
+    skills: Array.isArray(user.skills) ? user.skills : [],
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -75,6 +77,7 @@ const mapRealUserToProfile = (
   avatar: user.avatar ?? "",
   likesSkillsIds: previous?.likesSkillsIds ?? [],
   userSkill: previous?.userSkill ?? "",
+  skills: user.skills?.map((skill) => skill.id) ?? previous?.skills ?? [],
   interestedSkillsSubcategoriesIds:
     previous?.interestedSkillsSubcategoriesIds ?? [],
   createdAt: previous?.createdAt ?? "",
