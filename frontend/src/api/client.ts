@@ -19,10 +19,19 @@ async function parseErrorResponse(
 ): Promise<ApiError | null> {
   try {
     const data = await response.json();
-    if (data && typeof data === "object" && "code" in data) {
-      return data as ApiError;
+    if (!data || typeof data !== "object") {
+      return null;
     }
-    return null;
+    return {
+      code: typeof data.code === "string" ? data.code : "unknown",
+      statusCode:
+        typeof data.statusCode === "number"
+          ? data.statusCode
+          : response.status,
+      path: typeof data.path === "string" ? data.path : response.url,
+      timestamp: data.timestamp ?? new Date().toISOString(),
+      message: data.message,
+    } as ApiError;
   } catch {
     return null;
   }
