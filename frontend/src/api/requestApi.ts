@@ -89,6 +89,8 @@ export const createRequest = (
 };
 
 //GET my
+// бэк не отдаёт единый /requests/my — только раздельные /requests/incoming
+// (входящие = received) и /requests/outgoing (исходящие = sent).
 export const getMyRequests = (): Promise<IMyRequests> => {
   if (USE_MOCKS) {
     return fetch("/requests.json")
@@ -96,9 +98,13 @@ export const getMyRequests = (): Promise<IMyRequests> => {
       .then((res) => res.data);
   }
 
-  return request<ApiResponse<IMyRequests>>("/requests/my").then(
-    (res: { status: boolean; data: IMyRequests }) => res.data,
-  );
+  return Promise.all([
+    request<IBackendRequestEntity[]>("/requests/incoming"),
+    request<IBackendRequestEntity[]>("/requests/outgoing"),
+  ]).then(([incoming, outgoing]) => ({
+    received: incoming.map(mapBackendRequest),
+    sent: outgoing.map(mapBackendRequest),
+  }));
 };
 
 //GET by id
