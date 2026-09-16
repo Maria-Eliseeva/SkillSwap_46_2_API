@@ -51,10 +51,16 @@ export class NotificationsGateway implements OnGatewayConnection {
     return notification;
   }
 
-  notifyNewRequest(ownerId: string, fromUser: string, skillName: string) {
+  notifyNewRequest(
+    ownerId: string,
+    fromUser: string,
+    skillName: string,
+    skillId: string,
+  ) {
     return this.notifyUser(ownerId, {
       type: NotificationType.NEW_REQUEST,
       skillName,
+      skillId,
       fromUser,
     });
   }
@@ -63,10 +69,12 @@ export class NotificationsGateway implements OnGatewayConnection {
     applicantId: string,
     fromUser: string,
     skillName: string,
+    skillId: string,
   ) {
     return this.notifyUser(applicantId, {
       type: NotificationType.REQUEST_ACCEPTED,
       skillName,
+      skillId,
       fromUser,
     });
   }
@@ -75,10 +83,12 @@ export class NotificationsGateway implements OnGatewayConnection {
     applicantId: string,
     fromUser: string,
     skillName: string,
+    skillId: string,
   ) {
     return this.notifyUser(applicantId, {
       type: NotificationType.REQUEST_REJECTED,
       skillName,
+      skillId,
       fromUser,
     });
   }

@@ -19,6 +19,7 @@ describe('NotificationsService', () => {
   const payload: NotificationPayload = {
     type: NotificationType.NEW_REQUEST,
     skillName: 'TypeScript',
+    skillId: '11111111-1111-4111-8111-111111111111',
     fromUser: 'Алексей',
   };
 

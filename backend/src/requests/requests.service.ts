@@ -111,6 +111,7 @@ export class RequestsService {
           notificationReceiverId,
           notificationSenderName,
           notificationSkillTitle,
+          createRequestDto.requestedSkillId,
         ),
       );
     }
@@ -182,14 +183,16 @@ export class RequestsService {
     const fromUser =
       request.receiver?.name ?? request.receiver?.email ?? 'Пользователь';
     const skillName = request.requestedSkill?.title;
+    const skillId = request.requestedSkill?.id;
 
-    if (recipientId && skillName) {
+    if (recipientId && skillName && skillId) {
       await this.sendSocketNotification(() => {
         if (status === RequestStatus.ACCEPTED) {
           return this.notificationsGateway.notifyRequestAccepted(
             recipientId,
             fromUser,
             skillName,
+            skillId,
           );
         }
 
@@ -197,6 +200,7 @@ export class RequestsService {
           recipientId,
           fromUser,
           skillName,
+          skillId,
         );
       });
     }

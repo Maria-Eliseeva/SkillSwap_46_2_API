@@ -31,6 +31,9 @@ export class Notification {
   @Column({ type: 'text' })
   skillName!: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  skillId?: string;
+
   @Column({ type: 'text' })
   fromUser!: string;
 
