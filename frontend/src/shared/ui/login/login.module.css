@@ -133,3 +133,30 @@
   background-color: #fc3f1d;
   font-weight: 500;
 }
+
+.yandexAccount {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8, 8px);
+  width: 100%;
+}
+
+.account__yandex:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  border-color: var(--color-border, #9ca197);
+  background-color: transparent;
+}
+
+.account__yandex:disabled:hover {
+  border-color: var(--color-border, #9ca197);
+  background-color: transparent;
+}
+
+.yandexUnavailable {
+  margin: 0;
+  color: var(--color-error, #d93025);
+  font-size: var(--fs-caption, 12px);
+  line-height: var(--lh-caption, 16px);
+  text-align: center;
+}

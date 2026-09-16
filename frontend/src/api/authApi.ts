@@ -8,10 +8,21 @@ import type {
   TRegisterResponse,
 } from "../utils/types";
 import { api, request } from "./client";
- 
+
 const MOCK_TOKEN = "mock_jwt_token";
- 
- 
+
+export type TYandexOAuthStatus = {
+  enabled: boolean;
+};
+
+export const getYandexOAuthStatus = async (): Promise<TYandexOAuthStatus> => {
+  if (USE_MOCKS) {
+    return { enabled: true };
+  }
+
+  return request<TYandexOAuthStatus>("/auth/yandex/status");
+};
+
 // POST /auth/register — сейчас отправляем ТОЛЬКО email и password.
 // Остальные поля профиля уходят отдельными запросами на шаге 2
 // (PATCH /users/me и PATCH /users/me/want-to-learn).
@@ -29,14 +40,14 @@ export const registerUser = async (
       },
     };
   }
- 
+
   return request<TRegisterResponse>("/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 };
- 
+
 // POST /auth/login
 export const loginUser = async (
   data: TLoginUserData,
@@ -54,7 +65,7 @@ export const loginUser = async (
       user,
     };
   }
- 
+
   const resp = await request<TLoginUserResponse>("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -62,7 +73,7 @@ export const loginUser = async (
   });
   return resp;
 };
- 
+
 // POST /auth/check-user
 export const checkUser = async (data: TLoginUserData): Promise<void> => {
   const resp = await request<void>("/auth/check-user", {
@@ -73,7 +84,6 @@ export const checkUser = async (data: TLoginUserData): Promise<void> => {
   return resp;
 };
 
- 
 // GET /auth/profile
 // GET /users/me
 export const getProfile = async (): Promise<IRealUserMeResponse> => {
@@ -85,7 +95,7 @@ export const getProfile = async (): Promise<IRealUserMeResponse> => {
     silentStatuses: [401],
   });
 };
- 
+
 // PATCH /auth/password
 export const changePassword = async (
   newPassword: string,
@@ -93,7 +103,7 @@ export const changePassword = async (
   if (USE_MOCKS) {
     return { newPassword };
   }
- 
+
   const resp = await api.patch<{ newPassword: string }>(
     "/auth/password",
     { newPassword: newPassword },
@@ -103,7 +113,7 @@ export const changePassword = async (
       },
     },
   );
- 
+
   return resp;
 };
 

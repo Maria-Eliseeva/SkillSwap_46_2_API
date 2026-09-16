@@ -19,69 +19,98 @@ export const LoginUI: FC<LoginUIProps> = ({
   password,
   setPassword,
   onYandexLogin,
-}) => (
-  <AuthLayout
-    type="other"
-    title="Вход"
-    image={lightBulb}
-    description={{
-      title: "С возвращением в SkillSwap!",
-      text: "Обменивайтесь знаниями и навыками с другими людьми",
-    }}
-  >
-    <div className={styles.login__form}>
-      <div className={styles.accounts}>
-        <button
-          type="button"
-          className={styles.account__yandex}
-          onClick={onYandexLogin}
-        >
-          <span className={styles.yandexLogo} aria-hidden="true">
-            Я
-          </span>
-          <span>Продолжить с Яндекс ID</span>
-        </button>
-        <div className={styles.account__apple}>
-          <Icon name="apple" size={24} color="currentColor" />
-          <span>Продолжить с Apple</span>
-        </div>
-      </div>
-      <div className={styles.divider}>
-        <img src={divider} alt="Разделитель" />
-        <span>или</span>
-        <img src={divider} alt="Разделитель" />
-      </div>
-      <form className={styles.form} name="login" onSubmit={handleSubmit}>
-        <div className={styles.form__with__error}>
-          <div className={styles.form__fields}>
-            <BasicInput
-              label="Email"
-              placeholder="Введите email"
-              onChange={(value) => setEmail(value)}
-              value={email}
-              error={!!errorText && !email}
-              required
-            />
-            <PasswordInput
-              label="Пароль"
-              placeholder="Введите пароль"
-              onChange={(value) => setPassword(value)}
-              value={password}
-              error={!!errorText && !password}
-              required
-            />
+  isYandexLoginEnabled,
+}) => {
+  const isYandexUnavailable = isYandexLoginEnabled === false;
+  const isYandexStatusLoading = isYandexLoginEnabled === null;
+
+  return (
+    <AuthLayout
+      type="other"
+      title="Вход"
+      image={lightBulb}
+      description={{
+        title: "С возвращением в SkillSwap!",
+        text: "Обменивайтесь знаниями и навыками с другими людьми",
+      }}
+    >
+      <div className={styles.login__form}>
+        <div className={styles.accounts}>
+          <div className={styles.yandexAccount}>
+            <button
+              type="button"
+              className={styles.account__yandex}
+              onClick={onYandexLogin}
+              disabled={isYandexLoginEnabled !== true}
+              aria-busy={isYandexStatusLoading}
+              aria-describedby={
+                isYandexUnavailable ? "yandex-login-status" : undefined
+              }
+            >
+              <span className={styles.yandexLogo} aria-hidden="true">
+                Я
+              </span>
+              <span>
+                {isYandexStatusLoading
+                  ? "Проверяем доступность Яндекс ID"
+                  : "Продолжить с Яндекс ID"}
+              </span>
+            </button>
+
+            {isYandexUnavailable && (
+              <p id="yandex-login-status" className={styles.yandexUnavailable}>
+                Вход через Яндекс временно недоступен
+              </p>
+            )}
           </div>
-          {errorText && <p className={styles.error}>{errorText}</p>}
+
+          <div className={styles.account__apple}>
+            <Icon name="apple" size={24} color="currentColor" />
+            <span>Продолжить с Apple</span>
+          </div>
         </div>
-        <div className={styles.forms__buttons}>
-          <Button variant="primary" type="submit">
-            Войти
-          </Button>
-          <Link to="/registration" className={styles.registration__link}>
-            Зарегистрироваться
-          </Link>
+
+        <div className={styles.divider}>
+          <img src={divider} alt="Разделитель" />
+          <span>или</span>
+          <img src={divider} alt="Разделитель" />
         </div>
-      </form>
-    </div>
-  </AuthLayout>
-);
+
+        <form className={styles.form} name="login" onSubmit={handleSubmit}>
+          <div className={styles.form__with__error}>
+            <div className={styles.form__fields}>
+              <BasicInput
+                label="Email"
+                placeholder="Введите email"
+                onChange={(value) => setEmail(value)}
+                value={email}
+                error={!!errorText && !email}
+                required
+              />
+              <PasswordInput
+                label="Пароль"
+                placeholder="Введите пароль"
+                onChange={(value) => setPassword(value)}
+                value={password}
+                error={!!errorText && !password}
+                required
+              />
+            </div>
+
+            {errorText && <p className={styles.error}>{errorText}</p>}
+          </div>
+
+          <div className={styles.forms__buttons}>
+            <Button variant="primary" type="submit">
+              Войти
+            </Button>
+
+            <Link to="/registration" className={styles.registration__link}>
+              Зарегистрироваться
+            </Link>
+          </div>
+        </form>
+      </div>
+    </AuthLayout>
+  );
+};

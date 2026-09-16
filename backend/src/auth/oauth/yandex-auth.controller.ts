@@ -6,6 +6,11 @@ import { RequestWithOAuthUser } from '../auth.types';
 import { jwtConfig } from '../../config/jwt.config';
 import { yandexOAuthConfig } from '../../config/yandex-oauth.config';
 import { YandexAuthGuard } from './yandex-auth.guard';
+import { isYandexOAuthConfigured } from './yandex-oauth.utils';
+
+type YandexOAuthStatus = {
+  enabled: boolean;
+};
 
 @Controller('auth/yandex')
 export class YandexAuthController {
@@ -16,6 +21,13 @@ export class YandexAuthController {
     @Inject(yandexOAuthConfig.KEY)
     private readonly yandexConfiguration: ConfigType<typeof yandexOAuthConfig>,
   ) {}
+
+  @Get('status')
+  status(): YandexOAuthStatus {
+    return {
+      enabled: isYandexOAuthConfigured(this.yandexConfiguration),
+    };
+  }
 
   @Get()
   @UseGuards(YandexAuthGuard)

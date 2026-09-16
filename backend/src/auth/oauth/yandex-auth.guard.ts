@@ -6,6 +6,7 @@ import {
 import { ConfigType } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { yandexOAuthConfig } from '../../config/yandex-oauth.config';
+import { isYandexOAuthConfigured } from './yandex-oauth.utils';
 
 @Injectable()
 export class YandexAuthGuard extends AuthGuard('yandex') {
@@ -17,10 +18,7 @@ export class YandexAuthGuard extends AuthGuard('yandex') {
   }
 
   getAuthenticateOptions(): Record<string, never> {
-    const clientId = this.yandexConfiguration.clientId.trim();
-    const clientSecret = this.yandexConfiguration.clientSecret.trim();
-
-    if (!clientId || !clientSecret) {
+    if (!isYandexOAuthConfigured(this.yandexConfiguration)) {
       throw new ServiceUnavailableException(
         'Вход через Яндекс временно недоступен. Попробуйте позже.',
       );

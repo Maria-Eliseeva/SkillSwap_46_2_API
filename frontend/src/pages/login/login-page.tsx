@@ -4,11 +4,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector, type RootState } from "../../services/store";
 import { fetchLogin, fetchProfile } from "../../services/auth/actions";
 import { handleError } from "../../utils/errors/errorUtils";
+import { getYandexOAuthStatus } from "../../api/authApi";
 
 export const Login: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isYandexLoginEnabled, setIsYandexLoginEnabled] = useState<
+    boolean | null
+  >(null);
 
   const { currentUser } = useSelector((state: RootState) => state.auth);
 
@@ -17,6 +21,26 @@ export const Login: FC = () => {
   const dispatch = useDispatch();
 
   const from = (location.state as { from?: string })?.from || "/";
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getYandexOAuthStatus()
+      .then(({ enabled }) => {
+        if (isActive) {
+          setIsYandexLoginEnabled(enabled);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsYandexLoginEnabled(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const oauthStatus = new URLSearchParams(location.search).get("oauth");
@@ -55,6 +79,10 @@ export const Login: FC = () => {
   };
 
   const handleYandexLogin = () => {
+    if (isYandexLoginEnabled !== true) {
+      return;
+    }
+
     window.location.assign("/api/auth/yandex");
   };
 
@@ -67,6 +95,7 @@ export const Login: FC = () => {
       setPassword={setPassword}
       handleSubmit={handleSubmit}
       onYandexLogin={handleYandexLogin}
+      isYandexLoginEnabled={isYandexLoginEnabled}
     />
   );
 };
