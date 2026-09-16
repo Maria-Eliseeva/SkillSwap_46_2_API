@@ -168,8 +168,9 @@ export type TModifySkillData = Partial<
 
 /** ДАННЫЕ ЗАПРОСА НА ОБМЕН НАВЫКАМИ */
 export interface ISkillExchangeData {
-  userSkill: TId; // навык, которому пользователь может научить
-  requiredSkillUserId: TId; // id пользователя с необходимым навыком
+  userSkill: TId; // навык, которому пользователь может научить (offeredSkillId на бэке)
+  requiredSkillUserId: TId; // id пользователя с необходимым навыком (для локального стейта/сравнений)
+  requestedSkillId?: TId; // id навыка, который запрашивают (requestedSkillId на бэке)
   message: string; // сообщение
 }
 
@@ -183,8 +184,9 @@ export type TRequestStatus =
 
 export interface ISkillExchange {
   id: TId;
-  userSkill: TId;
+  userSkill: TId; // offeredSkillId на бэке
   requiredSkillUserId: TId;
+  requestedSkillId?: TId; // requestedSkillId на бэке
   message?: string;
   createdAt: string;
   status?: TRequestStatus;

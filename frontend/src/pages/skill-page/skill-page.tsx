@@ -305,6 +305,7 @@ export function SkillPage() {
         createRequestAction({
           userSkill: currentUser.skills![0],
           requiredSkillUserId: selectedUser.id,
+          requestedSkillId: selectedSkill?.id ?? id,
           message: `Хочу предложить обмен по навыку "${selectedSkill?.title ?? "Навык"}"`,
         }),
       ).unwrap();
