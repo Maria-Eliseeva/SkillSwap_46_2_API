@@ -119,11 +119,28 @@ export const getRequestById = (id: TId): Promise<ISkillExchange> => {
   );
 };
 
+// сырой ответ бэка на accept/reject: там грузятся relations только
+// ['receiver', 'sender'] (requests.service.ts updateStatus), offeredSkill/
+// requestedSkill в ответе нет — в отличие от IBackendRequestEntity.
+interface IBackendRequestStatusEntity {
+  id: TId;
+  status: TRequestStatus;
+  isRead: boolean;
+  createdAt: string;
+  sender: { id: TId };
+  receiver: { id: TId };
+}
+
+export type IRequestStatusUpdate = Pick<ISkillExchange, "id" | "status"> &
+  Partial<Pick<ISkillExchange, "fromUserId" | "toUserId">>;
+
 //PATCH status
+// бэк не принимает generic {status}, у него отдельные роуты accept/reject
+// без тела — другого способа поменять статус заявки нет.
 export const updateRequestStatus = (
   id: TId,
   status: TRequestStatus,
-): Promise<ISkillExchange> => {
+): Promise<IRequestStatusUpdate> => {
   if (USE_MOCKS) {
     return fetch("/request-single.json")
       .then((r) => r.json())
@@ -133,13 +150,25 @@ export const updateRequestStatus = (
         updatedAt: new Date().toISOString(),
       }));
   }
-  return request<ApiResponse<ISkillExchange>>(`/requests/${id}/status`, {
+
+  if (status !== "accepted" && status !== "rejected") {
+    return Promise.reject(
+      new Error(
+        `updateRequestStatus: бэк поддерживает только "accepted"/"rejected", получено "${status}"`,
+      ),
+    );
+  }
+
+  const endpoint = status === "accepted" ? "accept" : "reject";
+
+  return request<IBackendRequestStatusEntity>(`/requests/${id}/${endpoint}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  }).then((res: { status: boolean; data: ISkillExchange }) => res.data);
+  }).then((raw) => ({
+    id: raw.id,
+    status: raw.status,
+    fromUserId: raw.sender.id,
+    toUserId: raw.receiver.id,
+  }));
 };
 
 //PATCH complete
