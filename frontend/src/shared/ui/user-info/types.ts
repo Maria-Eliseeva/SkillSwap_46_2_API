@@ -10,6 +10,7 @@ export interface UserInfoProps {
     cityId?: string | null;
     about: string;
     avatar?: string;
+    wantToLearnSubcategoryId?: string | null;
   };
   onSave?: (data: {
     email: string;
@@ -19,6 +20,7 @@ export interface UserInfoProps {
     city: string;
     cityId: string | null;
     about: string;
+    wantToLearnSubcategoryId: string | null;
   }) => void;
   errors?: {
     email?: string;

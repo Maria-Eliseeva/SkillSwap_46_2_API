@@ -171,10 +171,16 @@ export const authSlice = createSlice({
       })
       .addCase(fetchUpdateMyProfile.rejected, handleRejected)
 
-      // updateWantToLearn (шаг 2 регистрации)
+      // updateWantToLearn (шаг 2 регистрации / редактирование профиля) —
+      // бэкенд отдаёт актуальный список категорий, GET /users/me эту связь
+      // не возвращает, поэтому синхронизируем currentUser сами.
       .addCase(fetchUpdateWantToLearn.pending, handlePending)
-      .addCase(fetchUpdateWantToLearn.fulfilled, (state) => {
+      .addCase(fetchUpdateWantToLearn.fulfilled, (state, action) => {
         state.loading = false;
+        if (state.currentUser) {
+          state.currentUser.interestedSkillsSubcategoriesIds =
+            action.payload.map((category) => category.id);
+        }
       })
       .addCase(fetchUpdateWantToLearn.rejected, handleRejected);
 
