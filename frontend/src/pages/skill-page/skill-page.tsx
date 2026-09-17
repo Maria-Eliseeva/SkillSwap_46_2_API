@@ -53,7 +53,7 @@ export function SkillPage() {
   const dispatch = useDispatch();
 
   const selectedUserFromStore = useSelector((state) => selectSelectedUser(state, id));
-  const similarUsers = useSelector(selectSimilarUsers);
+  const similarUsers = useSelector((state) => selectSimilarUsers(state, id));
   const users = useSelector((state) => state.user.list);
   const skills = useSelector((state) => state.skills.data);
   const selectedSkill =
@@ -212,7 +212,7 @@ export function SkillPage() {
 
   const preparedSimilarUsers = similarUsers
     .map((user) => {
-      const age = getAgeNumber(user.birthDate);
+      const age = user.birthDate ? getAgeNumber(user.birthDate) : (user.age ?? NaN);
       const canTeach = user.userSkill ? getSkillTitle(user.userSkill, skills) : "";
       const wantsToLearn = getSubcategoryNames(
         user.interestedSkillsSubcategoriesIds,
