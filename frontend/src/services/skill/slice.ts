@@ -52,7 +52,14 @@ export const skillSlice = createSlice({
 
         const updatedData = state.data.map((existing) => {
           const updated = newSkills.find((s) => s.id === existing.id);
-          return updated || existing;
+          if (!updated) return existing;
+
+          return {
+            ...existing,
+            title: updated.title,
+            createdAt: updated.createdAt,
+            updatedAt: updated.updatedAt,
+          };
         });
 
         state.data = [...updatedData, ...skillsToAdd];
