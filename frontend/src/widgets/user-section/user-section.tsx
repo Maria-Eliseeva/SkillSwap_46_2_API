@@ -3,7 +3,10 @@ import userInfo from "../../assets/images/user-info.svg";
 import { toggleFavoriteSkill } from "../../services/favorites/actions";
 import { selectFavoriteIds } from "../../services/favorites/slice";
 import { useDispatch, useSelector } from "../../services/store";
-import { getLearnColors } from "../../shared/lib/skillColors";
+import {
+  getCategoryColorBySubcategoryId,
+  getLearnColors,
+} from "../../shared/lib/skillColors";
 import type { IPublicSkillCard, TId } from "../../utils/types";
 import type { SkillCardProps } from "../skillcard";
 import { SkillCardGroup } from "../skillcard-group";
@@ -75,6 +78,11 @@ export const UserSection: FC<UserSectionProps> = ({
     city: item.user.city?.name ?? "",
     age: item.user.age ?? 0,
     canTeach: item.title,
+    teachColor: getCategoryColorBySubcategoryId(
+      item.categoryId ?? undefined,
+      subCategories,
+      categories,
+    ),
     wantsToLearn: (item.user.wantToLearn ?? []).map((w) => w.name),
     wantsToLearnColors: getLearnColors(
       (item.user.wantToLearn ?? []).map((w) => w.id),

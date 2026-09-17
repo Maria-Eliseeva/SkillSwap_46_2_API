@@ -95,6 +95,7 @@ export interface ISkillBackend {
   images: string[];
   user: Partial<IUserProfileOnBackend>;
   category: ISkillsCategory;
+  categoryId?: TId | null;
   createdAt: string;
 }
 
@@ -240,6 +241,7 @@ export interface IPublicSkillCard {
   id: TId;
   title: string;
   createdAt: string;
+  categoryId: TId | null;
   user: {
     id: TId;
     name: string;
