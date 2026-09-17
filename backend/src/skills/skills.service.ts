@@ -72,11 +72,69 @@ export class SkillsService {
       throw new NotFoundException(`Запрашиваемая страница ${page} не найдена.`);
     }
 
-    const data = rawData.map((skill) => ({
+    const favoritesCounts = await this.getFavoritesCounts(
+      rawData.map((s) => s.id),
+    );
+
+    return {
+      data: rawData.map((skill) =>
+        this.mapToListItem(skill, favoritesCounts.get(skill.id) ?? 0),
+      ),
+      page,
+      totalPages,
+    };
+  }
+
+  async getFavoriteSkills(userId: string) {
+    const rawData = await this.skillsRepository
+      .createQueryBuilder('skill')
+      .select(['skill.id', 'skill.title', 'skill.createdAt'])
+      .leftJoin('skill.user', 'user')
+      .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
+      .leftJoinAndSelect('user.city', 'city')
+      .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
+      .leftJoin('skill.category', 'category')
+      .addSelect(['category.id'])
+      .where(
+        'skill.id IN (SELECT skill_id FROM user_favorite_skills WHERE user_id = :userId)',
+        { userId },
+      )
+      .orderBy('skill.createdAt', 'DESC')
+      .getMany();
+
+    const favoritesCounts = await this.getFavoritesCounts(
+      rawData.map((s) => s.id),
+    );
+
+    return rawData.map((skill) =>
+      this.mapToListItem(skill, favoritesCounts.get(skill.id) ?? 0),
+    );
+  }
+
+  private async getFavoritesCounts(
+    skillIds: string[],
+  ): Promise<Map<string, number>> {
+    if (skillIds.length === 0) return new Map();
+
+    const rows = await this.skillsRepository.manager
+      .createQueryBuilder()
+      .select('ufs.skill_id', 'skillId')
+      .addSelect('COUNT(*)', 'count')
+      .from('user_favorite_skills', 'ufs')
+      .where('ufs.skill_id IN (:...skillIds)', { skillIds })
+      .groupBy('ufs.skill_id')
+      .getRawMany<{ skillId: string; count: string }>();
+
+    return new Map(rows.map((r) => [r.skillId, parseInt(r.count, 10)]));
+  }
+
+  private mapToListItem(skill: Skill, favoritesCount: number) {
+    return {
       id: skill.id,
       title: skill.title,
       createdAt: skill.createdAt,
       categoryId: skill.category?.id ?? null,
+      favoritesCount,
       user: {
         id: skill.user.id,
         name: skill.user.name,
@@ -90,12 +148,6 @@ export class SkillsService {
           name: c.name,
         })),
       },
-    }));
-
-    return {
-      data,
-      page,
-      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -180,6 +232,7 @@ export class SkillsService {
       .take(10)
       .getMany();
   }
+
   async update(ownerId: string, id: string, updateSkillDto: UpdateSkillDto) {
     const skill = await this.skillsRepository.findOne({
       where: { id },

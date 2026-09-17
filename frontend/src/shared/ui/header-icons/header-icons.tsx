@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import type { THeaderIconsProps } from "./types";
@@ -9,6 +9,8 @@ import { Popover } from "../popover";
 import { NotificationGroup } from "../notification-group";
 import type { TNotificationWithRoute } from "../notification-group/types";
 import styles from "./header.icons.module.css";
+import { useSelector } from "../../../services/store";
+import { selectFavoriteIds } from "../../../services/favorites/slice";
 import { useNotifications } from "../../lib/use-notifications";
 import { formatDateLabel } from "../../lib/formatDateLabel";
 import type { INotification } from "../../../api/notificationsApi";
@@ -57,6 +59,22 @@ const mapNotificationToItem = (
 export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
   const { isDarkTheme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
+
+  const favoriteIds = useSelector(selectFavoriteIds);
+  const hasFavorites = favoriteIds.length > 0;
+
+  // Кратковременная "пульсация" при добавлении в избранное
+  const [prevFavoriteCount, setPrevFavoriteCount] = useState(
+    favoriteIds.length,
+  );
+  const [isFavoritePulsing, setIsFavoritePulsing] = useState(false);
+
+  if (favoriteIds.length !== prevFavoriteCount) {
+    if (favoriteIds.length > prevFavoriteCount) {
+      setIsFavoritePulsing(true);
+    }
+    setPrevFavoriteCount(favoriteIds.length);
+  }
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications({ enabled: isUserAuth });
@@ -135,11 +153,17 @@ export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
 
           <button
             type="button"
-            className={clsx(styles.iconButton, styles.favoriteButton)}
+            className={clsx(
+              styles.iconButton,
+              styles.favoriteButton,
+              hasFavorites && styles.favoriteActive,
+              isFavoritePulsing && styles.favoritePulse,
+            )}
             aria-label="Перейти в избранное"
             onClick={handleFavoritesClick}
+            onAnimationEnd={() => setIsFavoritePulsing(false)}
           >
-            <Icon name="like" size={24} />
+            <Icon name={hasFavorites ? "like-filled" : "like"} size={24} />
           </button>
         </div>
       )}
