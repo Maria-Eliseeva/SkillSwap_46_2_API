@@ -58,12 +58,25 @@ export const fetchProfile = createAsyncThunk(
  
 export const fetchUpdateCurrentUser = createAsyncThunk(
   "auth/updateCurrentUser",
-  async (payload: Partial<TUpdateUserData>, { rejectWithValue }) => {
+  async (
+    payload: Partial<TUpdateUserData> & { cityId?: string | null },
+    { rejectWithValue },
+  ) => {
     try {
-      // Раньше здесь шёл PATCH /users/${id} с ручным Authorization-заголовком
-      // (старая Bearer-модель). updateMyProfile бьёт в правильный /users/me
-      // и полагается на httpOnly-куку, как и остальной фронтенд.
-      return await updateMyProfile(payload as IUpdateProfileData);
+      // Приводим фронт-формат профиля (birthDate/aboutMe/gender/cityId) к
+      // бэкенд-формату PATCH /users/me (birthdate/about/cityId/gender enum),
+      // чтобы сервер не отвечал 400 (см. #267).
+      const updateData: Partial<IUpdateProfileData> = {};
+
+      if (payload.name !== undefined) updateData.name = payload.name;
+      if (payload.email !== undefined) updateData.email = payload.email;
+      if (payload.birthDate !== undefined) updateData.birthdate = payload.birthDate;
+      if (payload.gender !== undefined) updateData.gender = payload.gender;
+      if (payload.aboutMe !== undefined) updateData.about = payload.aboutMe;
+      if (payload.avatar !== undefined) updateData.avatar = payload.avatar;
+      if (payload.cityId !== undefined) updateData.cityId = payload.cityId;
+
+      return await updateMyProfile(updateData);
     } catch (err) {
       return rejectWithValue(err);
     }

@@ -16,6 +16,7 @@ export interface UserInfoProps {
     birthDate: string;
     gender: OptionType | null;
     city: string;
+    cityId: string | null;
     about: string;
   }) => void;
   errors?: {

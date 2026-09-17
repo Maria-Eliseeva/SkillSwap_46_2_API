@@ -16,9 +16,9 @@ import { useDebounce } from "../../hooks/useDebounce";
 import styles from "./user-info.module.css";
 
 const genderOptions: OptionType[] = [
-  { value: "male", title: "Мужской" },
-  { value: "female", title: "Женский" },
-  { value: "other", title: "Другой" },
+  { value: "MALE", title: "Мужской" },
+  { value: "FEMALE", title: "Женский" },
+  { value: "UNSPECIFIED", title: "Другой" },
 ];
 
 const validatePassword = (password: string): string => {
@@ -116,6 +116,7 @@ export const UserInfo: FC<UserInfoProps> = ({
       birthDate,
       gender,
       city,
+      cityId: selectedCityOption?.value ?? null,
       about,
     });
   };
