@@ -6,7 +6,6 @@ import { Icon } from "../../shared/ui/icon";
 import { ModalUI } from "../../shared/ui/modal-ui";
 import { CreateOffer } from "../../features/modals/create-offer";
 import { ImageGallery } from "../../features/image-gallery/image-gallery";
-import { drumsImages } from "../../assets/images/skills";
 import styles from "./skill-page.module.css";
 import { SkillCardSlider } from "../../widgets/skillcard-slider";
 import { useDispatch, useSelector } from "../../services/store";
@@ -187,10 +186,7 @@ export function SkillPage() {
 
   const hasSkill = (currentUser?.skills?.length ?? 0) > 0;
 
-  const galleryImages =
-    selectedSkill?.images && selectedSkill.images.length > 0
-      ? selectedSkill.images
-      : drumsImages;
+  const galleryImages = selectedSkill?.images ?? [];
 
   // Проверяем, отправлено ли предложение
   const isOfferSent =
