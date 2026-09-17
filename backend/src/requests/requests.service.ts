@@ -34,6 +34,7 @@ export class RequestsService {
     let receiverId: string | undefined;
     let receiverEmail: string | undefined;
     let skillTitle: string | undefined;
+    let offeredSkillTitle: string | undefined;
     let senderName: string | undefined;
 
     const saved = await this.requestsRepository.manager.transaction(
@@ -79,6 +80,7 @@ export class RequestsService {
 
         receiverEmail = requestedSkill.user.email;
         skillTitle = requestedSkill.title;
+        offeredSkillTitle = offeredSkill.title;
         senderName =
           offeredSkill.user.name ?? offeredSkill.user.email ?? 'Пользователь';
 
@@ -101,17 +103,17 @@ export class RequestsService {
       );
     }
 
-    if (receiverId && senderName && skillTitle) {
+    if (receiverId && senderName && offeredSkillTitle) {
       const notificationReceiverId = receiverId;
       const notificationSenderName = senderName;
-      const notificationSkillTitle = skillTitle;
+      const notificationSkillTitle = offeredSkillTitle;
 
       await this.sendSocketNotification(() =>
         this.notificationsGateway.notifyNewRequest(
           notificationReceiverId,
           notificationSenderName,
           notificationSkillTitle,
-          createRequestDto.requestedSkillId,
+          createRequestDto.offeredSkillId,
         ),
       );
     }

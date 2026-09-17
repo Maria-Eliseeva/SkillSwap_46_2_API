@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
-import { tokenService } from "../../../utils/tokenService";
 import { SOCKET_URL } from "./socket-config";
 import type {
   TSocketNotification,
@@ -25,17 +24,9 @@ export const useNotificationsSocket = ({
       return;
     }
 
-    const token = tokenService.get();
-
-    if (!token) {
-      return;
-    }
-
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
-      query: {
-        token,
-      },
+      withCredentials: true,
       reconnection: true,
     });
 
