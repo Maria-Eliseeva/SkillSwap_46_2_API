@@ -1,16 +1,10 @@
-export type TNotificationType =
-  | "NEW_REQUEST"
-  | "REQUEST_ACCEPTED"
-  | "REQUEST_REJECTED";
+import type { INotification } from "../../../api/notificationsApi";
 
-export type TSocketNotification = {
-  id?: string;
-  type: TNotificationType;
-  skillName: string;
-  fromUser: string;
-  isRead?: boolean;
-  createdAt?: string;
-};
+// гейтвей эмитит уже сохранённую в БД сущность (см. notifications.gateway.ts
+// notifyUser) — форма пришедшего по сокету уведомления совпадает с REST-ответом
+export type TNotificationType = INotification["type"];
+
+export type TSocketNotification = INotification;
 
 export type TUseNotificationsSocketOptions = {
   enabled: boolean;
