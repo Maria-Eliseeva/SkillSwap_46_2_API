@@ -91,15 +91,15 @@ export const addSkill = (skill: TSkillData): Promise<TSkillResponse> => {
       },
     });
   }
-  return request<ApiResponse<ISkillBackend>>("/skills", {
+  return request<ISkillBackend>("/skills", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(toBackendPayload(skill)),
-  }).then((response) => ({
-    status: response.status,
-    data: formatSkill(response.data),
+  }).then((skill) => ({
+    status: true,
+    data: formatSkill(skill),
   }));
 };
  
@@ -137,15 +137,15 @@ export const modifySkill = (
     return Promise.reject();
   }
  
-  return request<ApiResponse<ISkillBackend>>(`/skills/${id}`, {
+  return request<ISkillBackend>(`/skills/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(toBackendPayload(skillData)),
-  }).then((response) => ({
-    status: response.status,
-    data: formatSkill(response.data),
+  }).then((skill) => ({
+    status: true,
+    data: formatSkill(skill),
   }));
 };
  
