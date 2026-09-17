@@ -24,7 +24,7 @@ const formatSkill = (skill: Partial<ISkillBackend> | null | undefined): ISkill =
 
   user: skill?.user ?? undefined,
   category: skill?.category ?? undefined,
-  skillSubcategory: skill?.category?.id ?? "",
+  skillSubcategory: skill?.category?.id ?? skill?.categoryId ?? "",
 
   createdAt: skill?.createdAt ?? new Date().toISOString(),
   updatedAt: skill?.createdAt ?? new Date().toISOString(),

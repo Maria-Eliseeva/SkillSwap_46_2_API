@@ -56,6 +56,8 @@ export class SkillsService {
       .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
       .leftJoinAndSelect('user.city', 'city')
       .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
+      .leftJoin('skill.category', 'category')
+      .addSelect(['category.id'])
       .where('LOWER(skill.title) LIKE LOWER(:search)', {
         search: `%${search}%`,
       })
@@ -74,6 +76,7 @@ export class SkillsService {
       id: skill.id,
       title: skill.title,
       createdAt: skill.createdAt,
+      categoryId: skill.category?.id ?? null,
       user: {
         id: skill.user.id,
         name: skill.user.name,
