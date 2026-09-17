@@ -55,6 +55,7 @@ export const UserInfo: FC<UserInfoProps> = ({
   const [birthDate, setBirthDate] = useState(user?.birthDate ?? "");
   const [gender, setGender] = useState<OptionType | null>(user?.gender ?? null);
   const [city, setCity] = useState(user?.city ?? "");
+  const [cityId, setCityId] = useState<string | null>(user?.cityId ?? null);
   const [about, setAbout] = useState(user?.about ?? "");
 
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -90,10 +91,13 @@ export const UserInfo: FC<UserInfoProps> = ({
     };
   }, [debouncedCitySearch]);
 
-  const cityOptions: OptionType[] = useMemo(
-    () => cities.map((c) => ({ value: c.id, title: c.name })),
-    [cities],
-  );
+  const cityOptions: OptionType[] = useMemo(() => {
+    const loaded = cities.map((c) => ({ value: c.id, title: c.name }));
+    if (city && !loaded.some((option) => option.title === city)) {
+      return [{ value: cityId ?? city, title: city }, ...loaded];
+    }
+    return loaded;
+  }, [cities, city, cityId]);
 
   const selectedCityOption = useMemo(
     () => cityOptions.find((option) => option.title === city) ?? null,
@@ -106,6 +110,7 @@ export const UserInfo: FC<UserInfoProps> = ({
 
   const handleCityChange = (option: OptionType | null) => {
     setCity(option?.title ?? "");
+    setCityId(option?.value ?? null);
     setCitySearch("");
   };
 
@@ -116,7 +121,7 @@ export const UserInfo: FC<UserInfoProps> = ({
       birthDate,
       gender,
       city,
-      cityId: selectedCityOption?.value ?? null,
+      cityId,
       about,
     });
   };

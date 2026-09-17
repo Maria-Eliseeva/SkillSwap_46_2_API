@@ -91,6 +91,7 @@ export const ProfilePage: FC = () => {
             }
           : null,
         city: currentUser.city,
+        cityId: currentUser.cityId ?? null,
         about: currentUser.aboutMe ?? "",
         avatar: resolveAssetUrl(currentUser.avatar),
       }

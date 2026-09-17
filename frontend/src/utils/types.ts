@@ -27,6 +27,7 @@ export interface IUserProfile extends IUser {
   birthDate: string;
   gender?: TGender;
   city: string;
+  cityId?: TId | null;
   avatar: string;
   aboutMe?: string; // "о себе"
   likesSkillsIds: TId[]; // массив id навыков, которые лайкнул пользователь
