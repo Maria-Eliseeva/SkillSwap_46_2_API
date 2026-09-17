@@ -3,6 +3,7 @@ import userInfo from "../../assets/images/user-info.svg";
 import { toggleFavoriteSkill } from "../../services/favorites/actions";
 import { selectFavoriteIds } from "../../services/favorites/slice";
 import { useDispatch, useSelector } from "../../services/store";
+import { getLearnColors } from "../../shared/lib/skillColors";
 import type { IPublicSkillCard, TId } from "../../utils/types";
 import type { SkillCardProps } from "../skillcard";
 import { SkillCardGroup } from "../skillcard-group";
@@ -34,6 +35,8 @@ export const UserSection: FC<UserSectionProps> = ({
   const currentUser = useSelector((state) => state.auth.currentUser);
   const sentRequests = useSelector((state) => state.requests.sent);
   const favoriteIds = useSelector(selectFavoriteIds);
+  const categories = useSelector((state) => state.category.categories);
+  const subCategories = useSelector((state) => state.category.subCategories);
 
   const handleFavoriteClick = (skillId: TId): void => {
     if (!currentUser) {
@@ -73,10 +76,13 @@ export const UserSection: FC<UserSectionProps> = ({
     age: item.user.age ?? 0,
     canTeach: item.title,
     wantsToLearn: (item.user.wantToLearn ?? []).map((w) => w.name),
+    wantsToLearnColors: getLearnColors(
+      (item.user.wantToLearn ?? []).map((w) => w.id),
+      subCategories,
+      categories,
+    ),
     isFavorite: favoriteIds.includes(item.id),
     onFavoriteClick: () => handleFavoriteClick(item.id),
-    // TODO: teachColor/wantsToLearnColors временно не выставляем — у навыка
-    // пока нет собственной категории в ответе GET /skills (см. чат с бэком).
     disableDetails: String(item.user.id) === String(currentUser?.id),
     exchangeProposed: sentRequests.some(
       (request) => String(request.requiredSkillUserId) === String(item.user.id),
