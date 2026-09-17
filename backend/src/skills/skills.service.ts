@@ -53,7 +53,13 @@ export class SkillsService {
       .createQueryBuilder('skill')
       .select(['skill.id', 'skill.title', 'skill.createdAt'])
       .leftJoin('skill.user', 'user')
-      .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
+      .addSelect([
+        'user.id',
+        'user.name',
+        'user.avatar',
+        'user.birthdate',
+        'user.gender',
+      ])
       .leftJoinAndSelect('user.city', 'city')
       .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
       .leftJoin('skill.category', 'category')
@@ -90,7 +96,13 @@ export class SkillsService {
       .createQueryBuilder('skill')
       .select(['skill.id', 'skill.title', 'skill.createdAt'])
       .leftJoin('skill.user', 'user')
-      .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
+      .addSelect([
+        'user.id',
+        'user.name',
+        'user.avatar',
+        'user.birthdate',
+        'user.gender',
+      ])
       .leftJoinAndSelect('user.city', 'city')
       .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
       .leftJoin('skill.category', 'category')
@@ -140,6 +152,7 @@ export class SkillsService {
         name: skill.user.name,
         avatar: skill.user.avatar,
         age: this.calculateAge(skill.user.birthdate),
+        gender: skill.user.gender,
         city: skill.user.city
           ? { id: skill.user.city.id, name: skill.user.city.name }
           : null,

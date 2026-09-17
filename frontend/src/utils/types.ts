@@ -248,6 +248,7 @@ export interface IPublicSkillCard {
     name: string;
     avatar: string | null;
     age: number | null;
+    gender: TGender | null;
     city: { id: TId; name: string } | null;
     wantToLearn: { id: TId; name: string }[] | null;
   };
