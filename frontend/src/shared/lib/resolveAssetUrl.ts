@@ -6,7 +6,7 @@
 // возвращаем как есть — их трогать не нужно.
 export const resolveAssetUrl = (path: string | null | undefined): string => {
   if (!path) return "";
-  if (/^https?:\/\//.test(path)) return path;
+  if (/^(https?:|blob:|data:)/.test(path)) return path;
  
   const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   return `${backendUrl}${path}`;

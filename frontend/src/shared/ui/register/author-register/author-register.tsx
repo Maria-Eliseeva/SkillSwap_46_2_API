@@ -26,14 +26,16 @@ import {
   fetchCategories,
   fetchSubCategories,
 } from "../../../../services/category/actions";
-import { useImageUpload } from "../../../hooks/useImageUpload";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { getCities, type ICity } from "../../../../api/cityApi";
+import { validateImageFile } from "../../../../api/imageApi";
+import { showToast } from "../../../../utils/toast";
 import { USE_TOAST } from "../../../../config/apiConfig";
 
 export const AuthorRegister: FC<AuthorRegisterProps> = ({
   avatar,
   setAvatar,
+  setAvatarFile,
   name,
   setName,
   birthDate,
@@ -58,8 +60,6 @@ export const AuthorRegister: FC<AuthorRegisterProps> = ({
     dispatch(fetchCategories());
     dispatch(fetchSubCategories());
   }, [dispatch]);
-
-  const { uploadSingle } = useImageUpload();
 
   const [citySearch, setCitySearch] = useState("");
   const [cities, setCities] = useState<ICity[]>([]);
@@ -133,14 +133,18 @@ export const AuthorRegister: FC<AuthorRegisterProps> = ({
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const result = await uploadSingle(file);
-        if (result?.url) {
-          setAvatar(result.url);
-        }
+      if (!file) return;
+
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        showToast(validationError, "error");
+        return;
       }
+
+      setAvatarFile(file);
+      setAvatar(URL.createObjectURL(file));
     };
     input.click();
   };
