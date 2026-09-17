@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useReducer } from "react";
+import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import type { THeaderIconsProps } from "./types";
@@ -7,197 +7,69 @@ import { Toggle } from "../toggle";
 import { Icon } from "../icon";
 import { Popover } from "../popover";
 import { NotificationGroup } from "../notification-group";
-import type { TNotificationGroupItem } from "../notification-group/types";
+import type { TNotificationWithRoute } from "../notification-group/types";
 import styles from "./header.icons.module.css";
-import { useDispatch, useSelector } from "../../../services/store";
-import { fetchMyRequests } from "../../../services/request/actions";
-import { useNotificationsSocket } from "../../lib/use-notifications-socket";
+import { useNotifications } from "../../lib/use-notifications";
+import { formatDateLabel } from "../../lib/formatDateLabel";
+import type { INotification } from "../../../api/notificationsApi";
 
-const MONTHS = [
-  "января",
-  "февраля",
-  "марта",
-  "апреля",
-  "мая",
-  "июня",
-  "июля",
-  "августа",
-  "сентября",
-  "октября",
-  "ноября",
-  "декабря",
-] as const;
-
-type TNotificationWithRoute = TNotificationGroupItem & {
-  targetSkillId?: string;
-};
-
-const formatDateLabel = (value?: string) => {
-  if (!value) return "";
-
-  const date = new Date(value);
-  const now = new Date();
-
-  const currentDay = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
-
-  const targetDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  ).getTime();
-
-  const diffDays = Math.round((currentDay - targetDay) / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "сегодня";
-  if (diffDays === 1) return "вчера";
-
-  return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
-};
-
-const readStorageArray = (key: string | null) => {
-  if (!key) return [];
-
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+const getNotificationText = (
+  notification: INotification,
+): { title: string; description: string } => {
+  switch (notification.type) {
+    case "REQUEST_ACCEPTED":
+      return {
+        title: `${notification.fromUser} принял вашу заявку на «${notification.skillName}»`,
+        description: "Перейдите в профиль, чтобы обсудить детали",
+      };
+    case "REQUEST_REJECTED":
+      return {
+        title: `${notification.fromUser} отклонил вашу заявку на «${notification.skillName}»`,
+        description: "Попробуйте предложить другой навык",
+      };
+    case "NEW_REQUEST":
+    default:
+      return {
+        title: `${notification.fromUser} предлагает вам обмен навыком «${notification.skillName}»`,
+        description: "Примите обмен, чтобы обсудить детали",
+      };
   }
 };
 
-const writeStorageArray = (key: string | null, value: string[]) => {
-  if (!key) return;
-  localStorage.setItem(key, JSON.stringify(value));
+const mapNotificationToItem = (
+  notification: INotification,
+  onActionClick: () => void,
+): TNotificationWithRoute => {
+  const { title, description } = getNotificationText(notification);
+
+  return {
+    id: notification.id,
+    title,
+    description,
+    dateLabel: formatDateLabel(notification.createdAt),
+    isRead: notification.isRead,
+    actionLabel: "Перейти",
+    onActionClick,
+    targetSkillId: notification.skillId,
+  };
 };
 
 export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
   const { isDarkTheme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  useNotificationsSocket({
-    enabled: isUserAuth,
-    onNotification: () => {
-      dispatch(fetchMyRequests());
-    },
-  });
 
-  const requestsReceived = useSelector((state) => state.requests.received);
-  const requestsSent = useSelector((state) => state.requests.sent);
-  const users = useSelector((state) => state.user.list);
-  const currentUser = useSelector((state) => state.auth.currentUser);
-
-  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
-
-  const readStorageKey = currentUser?.id
-    ? `header-notifications-read-${currentUser.id}`
-    : null;
-
-  const hiddenStorageKey = currentUser?.id
-    ? `header-notifications-hidden-${currentUser.id}`
-    : null;
-
-  const readNotificationIds = readStorageArray(readStorageKey);
-  const hiddenNotificationIds = readStorageArray(hiddenStorageKey);
-
-  useEffect(() => {
-    if (isUserAuth) {
-      dispatch(fetchMyRequests());
-    }
-  }, [dispatch, isUserAuth]);
-
-  const notifications = useMemo<TNotificationWithRoute[]>(() => {
-    const getUserNameById = (userId?: string) => {
-      if (!userId) return "Пользователь";
-
-      const user = users.find((item) => String(item.id) === String(userId));
-      return user?.name || "Пользователь";
-    };
-
-    const receivedNotifications: TNotificationWithRoute[] = requestsReceived
-      .filter((request) => request.status === "pending" || !request.status)
-      .map((request) => ({
-        id: `received-${request.id}`,
-        title: `${getUserNameById(request.fromUserId)} предлагает вам обмен`,
-        description: "Примите обмен, чтобы обсудить детали",
-        dateLabel: formatDateLabel(request.createdAt),
-        isRead: readNotificationIds.includes(`received-${request.id}`),
-        actionLabel: "Перейти",
-        onActionClick: undefined,
-        // предложенный отправителем навык, а не его userId
-        targetSkillId: request.userSkill,
-      }));
-
-    const acceptedStatuses = ["accepted", "inProgress", "done"];
-
-    const sentNotifications: TNotificationWithRoute[] = requestsSent
-      .filter(
-        (request) =>
-          !!request.status && acceptedStatuses.includes(request.status),
-      )
-      .map((request) => ({
-        id: `sent-${request.id}`,
-        title: `${getUserNameById(request.toUserId)} принял ваш обмен`,
-        description: "Перейдите в профиль, чтобы обсудить детали",
-        dateLabel: formatDateLabel(request.updatedAt || request.createdAt),
-        isRead: readNotificationIds.includes(`sent-${request.id}`),
-        actionLabel: "Перейти",
-        onActionClick: undefined,
-        // навык, который я запрашивал, а не userId получателя
-        targetSkillId: request.requestedSkillId,
-      }));
-
-    return [...receivedNotifications, ...sentNotifications].filter(
-      (notification) => !hiddenNotificationIds.includes(notification.id),
-    );
-  }, [
-    requestsReceived,
-    requestsSent,
-    users,
-    readNotificationIds,
-    hiddenNotificationIds,
-  ]);
-
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
-
-  const handleReadAll = () => {
-    const unreadIds = notifications
-      .filter((item) => !item.isRead)
-      .map((item) => item.id);
-
-    const nextReadIds = [...new Set([...readNotificationIds, ...unreadIds])];
-    writeStorageArray(readStorageKey, nextReadIds);
-    forceUpdate();
-  };
-
-  const handleClearRead = () => {
-    const readIds = notifications
-      .filter((item) => item.isRead)
-      .map((item) => item.id);
-
-    const nextHiddenIds = [...new Set([...hiddenNotificationIds, ...readIds])];
-    writeStorageArray(hiddenStorageKey, nextHiddenIds);
-    forceUpdate();
-  };
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotifications({ enabled: isUserAuth });
 
   const handleNotificationClick = (
-    notification: TNotificationWithRoute,
+    notification: INotification,
     close: () => void,
   ) => {
-    const nextReadIds = [...new Set([...readNotificationIds, notification.id])];
-    writeStorageArray(readStorageKey, nextReadIds);
-
+    void markAsRead(notification.id);
     close();
-    forceUpdate();
 
-    if (notification.targetSkillId) {
-      navigate(`/skill/${notification.targetSkillId}`);
+    if (notification.skillId) {
+      navigate(`/skill/${notification.skillId}`);
       return;
     }
 
@@ -251,12 +123,12 @@ export const HeaderIcons: React.FC<THeaderIconsProps> = ({ isUserAuth }) => {
           >
             {({ close }) => (
               <NotificationGroup
-                notifications={notifications.map((item) => ({
-                  ...item,
-                  onActionClick: () => handleNotificationClick(item, close),
-                }))}
-                onReadAll={handleReadAll}
-                onClearRead={handleClearRead}
+                notifications={notifications.map((notification) =>
+                  mapNotificationToItem(notification, () =>
+                    handleNotificationClick(notification, close),
+                  ),
+                )}
+                onReadAll={markAllAsRead}
               />
             )}
           </Popover>
