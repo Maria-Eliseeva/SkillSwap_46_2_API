@@ -142,7 +142,7 @@ export const modifySkill = (
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(skillData),
+    body: JSON.stringify(toBackendPayload(skillData)),
   }).then((response) => ({
     status: response.status,
     data: formatSkill(response.data),
