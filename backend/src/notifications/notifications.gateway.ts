@@ -12,7 +12,9 @@ import { NotificationsService } from './notifications.service';
 import { NotificationPayload, NotificationType } from './notifications.types';
 
 @UseGuards(WsJwtGuard)
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({
+  cors: { origin: 'http://localhost:5173', credentials: true },
+})
 export class NotificationsGateway implements OnGatewayConnection {
   private readonly logger = new Logger(NotificationsGateway.name);
 

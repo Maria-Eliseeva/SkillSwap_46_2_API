@@ -3,7 +3,6 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { renderHook } from "@testing-library/react";
 import { io, type Socket } from "socket.io-client";
-import { tokenService } from "../../../utils/tokenService";
 import { useNotificationsSocket } from "./use-notifications-socket";
 import type { TSocketNotification } from "./types";
 
@@ -29,14 +28,7 @@ jest.mock("socket.io-client", () => ({
   io: jest.fn(),
 }));
 
-jest.mock("../../../utils/tokenService", () => ({
-  tokenService: {
-    get: jest.fn(),
-  },
-}));
-
 const mockedIo = jest.mocked(io);
-const mockedTokenGet = jest.mocked(tokenService.get);
 
 describe("useNotificationsSocket", () => {
   beforeEach(() => {
@@ -45,8 +37,6 @@ describe("useNotificationsSocket", () => {
   });
 
   test("does not connect when notifications are disabled", () => {
-    mockedTokenGet.mockReturnValue("access-token");
-
     renderHook(() =>
       useNotificationsSocket({
         enabled: false,
@@ -57,22 +47,7 @@ describe("useNotificationsSocket", () => {
     expect(mockedIo).not.toHaveBeenCalled();
   });
 
-  test("does not connect when the access token is missing", () => {
-    mockedTokenGet.mockReturnValue(null);
-
-    renderHook(() =>
-      useNotificationsSocket({
-        enabled: true,
-        onNotification: jest.fn(),
-      }),
-    );
-
-    expect(mockedIo).not.toHaveBeenCalled();
-  });
-
-  test("connects with the token expected by the backend guard", () => {
-    mockedTokenGet.mockReturnValue("access-token");
-
+  test("connects with the httpOnly cookie sent by the browser", () => {
     renderHook(() =>
       useNotificationsSocket({
         enabled: true,
@@ -84,17 +59,13 @@ describe("useNotificationsSocket", () => {
       expect.any(String),
       expect.objectContaining({
         transports: ["websocket"],
-        query: {
-          token: "access-token",
-        },
+        withCredentials: true,
         reconnection: true,
       }),
     );
   });
 
   test("passes received notifications to the current handler", () => {
-    mockedTokenGet.mockReturnValue("access-token");
-
     const firstHandler = jest.fn();
     const secondHandler = jest.fn();
 
@@ -139,8 +110,6 @@ describe("useNotificationsSocket", () => {
   });
 
   test("removes the listener and disconnects on unmount", () => {
-    mockedTokenGet.mockReturnValue("access-token");
-
     const { unmount } = renderHook(() =>
       useNotificationsSocket({
         enabled: true,
