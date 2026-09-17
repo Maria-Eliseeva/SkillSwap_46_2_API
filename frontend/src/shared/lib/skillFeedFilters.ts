@@ -27,14 +27,14 @@ export const matchesSkillFeed = (
 ): boolean => {
   if (subCategoryIds.length === 0) return true;
 
+  const canTeach =
+    !!item.categoryId && subCategoryIds.includes(item.categoryId);
   const wantsToLearn = (item.user.wantToLearn ?? []).some((w) =>
     subCategoryIds.includes(w.id),
   );
 
-  // TODO: у навыка пока нет собственной категории в ответе GET /skills,
-  // поэтому "чему может научить" временно не фильтруется по категории.
-  if (skillOption === "can-teach") return true;
+  if (skillOption === "can-teach") return canTeach;
   if (skillOption === "want-to-learn") return wantsToLearn;
 
-  return wantsToLearn; // 'all'
+  return canTeach || wantsToLearn; // 'all'
 };
