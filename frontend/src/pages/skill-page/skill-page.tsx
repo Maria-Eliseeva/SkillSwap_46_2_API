@@ -92,12 +92,16 @@ export function SkillPage() {
       return;
     }
 
-    if (skills.length === 0) {
-      dispatch(fetchSkills());
+    dispatch(fetchSkillById(id));
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (!id) {
+      return;
     }
 
-    if (!selectedSkill) {
-      dispatch(fetchSkillById(id));
+    if (skills.length === 0) {
+      dispatch(fetchSkills());
     }
 
     if (categories.length === 0) {
@@ -114,7 +118,6 @@ export function SkillPage() {
   }, [
     dispatch,
     id,
-    selectedSkill,
     skills.length,
     categories.length,
     subCategories.length,
