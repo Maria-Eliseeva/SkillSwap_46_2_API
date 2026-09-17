@@ -10,6 +10,10 @@ import {
   fetchUpdateWantToLearn,
   updatePassword,
 } from "./actions.ts";
+import {
+  appendSkill,
+  removeSkill,
+} from "../skill/actions";
 import type { AuthState } from "./types.ts";
 import type { IRealUserMeResponse, IUserProfile } from "../../utils/types.ts";
 type NormalizableUser = {
@@ -182,7 +186,27 @@ export const authSlice = createSlice({
             action.payload.map((category) => category.id);
         }
       })
-      .addCase(fetchUpdateWantToLearn.rejected, handleRejected);
+      .addCase(fetchUpdateWantToLearn.rejected, handleRejected)
+
+      // appendSkill/removeSkill — GET /users/me не дёргается заново после
+      // создания/удаления навыка, поэтому currentUser.skills синхронизируем
+      // здесь же, чтобы hasSkill на skill-page не оставался протухшим до F5.
+      .addCase(appendSkill.fulfilled, (state, action) => {
+        if (state.currentUser) {
+          const newSkillId = action.payload.data.id;
+          const skills = state.currentUser.skills ?? [];
+          if (!skills.includes(newSkillId)) {
+            state.currentUser.skills = [...skills, newSkillId];
+          }
+        }
+      })
+      .addCase(removeSkill.fulfilled, (state, action) => {
+        if (state.currentUser) {
+          state.currentUser.skills = (state.currentUser.skills ?? []).filter(
+            (skillId) => skillId !== action.payload,
+          );
+        }
+      });
 
     builder
       .addCase(fetchCheckUser.pending, (state) => {
