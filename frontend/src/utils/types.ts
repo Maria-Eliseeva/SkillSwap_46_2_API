@@ -217,9 +217,10 @@ export type TRegisterResponse = { user: IRegisterResponseUser };
 
 /** ДАННЫЕ ДЛЯ PATCH /users/me — все поля опциональны */
 export interface IUpdateProfileData {
+  email?: string;
   name?: string;
   birthdate?: string;
-  gender?: "MALE" | "FEMALE";
+  gender?: "MALE" | "FEMALE" | "UNSPECIFIED";
   cityId?: TId | null;
   avatar?: string;
   about?: string;

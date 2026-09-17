@@ -273,5 +273,30 @@ describe("auth thunks", () => {
 
       expect(result.meta.requestStatus).toBe("rejected");
     });
+
+    it("fulfilled: приводит фронт-формат профиля к бэкенд-формату (#267)", async () => {
+      mockedUserApi.updateMyProfile.mockResolvedValue(
+        mockRealUser as unknown as IUserProfile,
+      );
+
+      const store = createTestStore({ currentUser: mockUser });
+      await store.dispatch(
+        fetchUpdateCurrentUser({
+          name: "Иван",
+          birthDate: "1995-11-23",
+          gender: "MALE",
+          aboutMe: "О себе",
+          cityId: "city-1",
+        }),
+      );
+
+      expect(mockedUserApi.updateMyProfile).toHaveBeenCalledWith({
+        name: "Иван",
+        birthdate: "1995-11-23",
+        gender: "MALE",
+        about: "О себе",
+        cityId: "city-1",
+      });
+    });
   });
 });
