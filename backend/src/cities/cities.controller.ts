@@ -27,8 +27,14 @@ export class CitiesController {
   constructor(private readonly citiesService: CitiesService) {}
 
   @Get()
-  async findAll(@Query('search') search?: string): Promise<CityShort[]> {
-    return this.citiesService.search(search);
+  async findAll(
+    @Query('search') search?: string,
+    @Query('major') major?: string,
+  ): Promise<CityShort[]> {
+    return this.citiesService.search({
+      search,
+      major: major === 'true',
+    });
   }
 
   @Delete(':id')

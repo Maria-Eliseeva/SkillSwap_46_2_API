@@ -14,8 +14,6 @@ import { UsersService } from '../users/users.service';
 import { User } from 'src/users/entities/user.entity';
 import { Category } from '../categories/entities/category.entity';
 
-type SkillWithFavoritesCount = Skill & { favoritesCount: number };
-
 @Injectable()
 export class SkillsService {
   constructor(
@@ -48,105 +46,110 @@ export class SkillsService {
     return this.skillsRepository.save(skill);
   }
 
-async findAll(dto: FindSkillsDto) {
-  const { page = 1, limit = 20, search = '' } = dto;
+  async findAll(dto: FindSkillsDto) {
+    const { page = 1, limit = 20, search = '' } = dto;
 
-  const query = this.skillsRepository
-    .createQueryBuilder('skill')
-    .select(['skill.id', 'skill.title', 'skill.createdAt'])
-    .leftJoin('skill.user', 'user')
-    .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
-    .leftJoinAndSelect('user.city', 'city')
-    .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
-    .where('LOWER(skill.title) LIKE LOWER(:search)', {
-      search: `%${search}%`,
-    })
-    .orderBy('skill.createdAt', 'DESC')
-    .skip((page - 1) * limit)
-    .take(limit);
+    const query = this.skillsRepository
+      .createQueryBuilder('skill')
+      .select(['skill.id', 'skill.title', 'skill.createdAt'])
+      .leftJoin('skill.user', 'user')
+      .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
+      .leftJoinAndSelect('user.city', 'city')
+      .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
+      .leftJoin('skill.category', 'category')
+      .addSelect(['category.id'])
+      .where('LOWER(skill.title) LIKE LOWER(:search)', {
+        search: `%${search}%`,
+      })
+      .orderBy('skill.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
-  const [rawData, total] = await query.getManyAndCount();
-  const totalPages = Math.ceil(total / limit);
+    const [rawData, total] = await query.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
 
-  if (totalPages > 0 && page > totalPages) {
-    throw new NotFoundException(`Запрашиваемая страница ${page} не найдена.`);
+    if (totalPages > 0 && page > totalPages) {
+      throw new NotFoundException(`Запрашиваемая страница ${page} не найдена.`);
+    }
+
+    const favoritesCounts = await this.getFavoritesCounts(
+      rawData.map((s) => s.id),
+    );
+
+    return {
+      data: rawData.map((skill) =>
+        this.mapToListItem(skill, favoritesCounts.get(skill.id) ?? 0),
+      ),
+      page,
+      totalPages,
+    };
   }
 
-  const favoritesCounts = await this.getFavoritesCounts(
-    rawData.map((s) => s.id),
-  );
+  async getFavoriteSkills(userId: string) {
+    const rawData = await this.skillsRepository
+      .createQueryBuilder('skill')
+      .select(['skill.id', 'skill.title', 'skill.createdAt'])
+      .leftJoin('skill.user', 'user')
+      .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
+      .leftJoinAndSelect('user.city', 'city')
+      .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
+      .leftJoin('skill.category', 'category')
+      .addSelect(['category.id'])
+      .where(
+        'skill.id IN (SELECT skill_id FROM user_favorite_skills WHERE user_id = :userId)',
+        { userId },
+      )
+      .orderBy('skill.createdAt', 'DESC')
+      .getMany();
 
-  return {
-    data: rawData.map((skill) =>
+    const favoritesCounts = await this.getFavoritesCounts(
+      rawData.map((s) => s.id),
+    );
+
+    return rawData.map((skill) =>
       this.mapToListItem(skill, favoritesCounts.get(skill.id) ?? 0),
-    ),
-    page,
-    totalPages,
-  };
-}
+    );
+  }
 
-async getFavoriteSkills(userId: string) {
-  const rawData = await this.skillsRepository
-    .createQueryBuilder('skill')
-    .select(['skill.id', 'skill.title', 'skill.createdAt'])
-    .leftJoin('skill.user', 'user')
-    .addSelect(['user.id', 'user.name', 'user.avatar', 'user.birthdate'])
-    .leftJoinAndSelect('user.city', 'city')
-    .leftJoinAndSelect('user.wantToLearn', 'wantToLearn')
-    .where(
-      'skill.id IN (SELECT skill_id FROM user_favorite_skills WHERE user_id = :userId)',
-      { userId },
-    )
-    .orderBy('skill.createdAt', 'DESC')
-    .getMany();
+  private async getFavoritesCounts(
+    skillIds: string[],
+  ): Promise<Map<string, number>> {
+    if (skillIds.length === 0) return new Map();
 
-  const favoritesCounts = await this.getFavoritesCounts(
-    rawData.map((s) => s.id),
-  );
+    const rows = await this.skillsRepository.manager
+      .createQueryBuilder()
+      .select('ufs.skill_id', 'skillId')
+      .addSelect('COUNT(*)', 'count')
+      .from('user_favorite_skills', 'ufs')
+      .where('ufs.skill_id IN (:...skillIds)', { skillIds })
+      .groupBy('ufs.skill_id')
+      .getRawMany<{ skillId: string; count: string }>();
 
-  return rawData.map((skill) =>
-    this.mapToListItem(skill, favoritesCounts.get(skill.id) ?? 0),
-  );
-}
+    return new Map(rows.map((r) => [r.skillId, parseInt(r.count, 10)]));
+  }
 
-private async getFavoritesCounts(
-  skillIds: string[],
-): Promise<Map<string, number>> {
-  if (skillIds.length === 0) return new Map();
-
-  const rows = await this.skillsRepository.manager
-    .createQueryBuilder()
-    .select('ufs.skill_id', 'skillId')
-    .addSelect('COUNT(*)', 'count')
-    .from('user_favorite_skills', 'ufs')
-    .where('ufs.skill_id IN (:...skillIds)', { skillIds })
-    .groupBy('ufs.skill_id')
-    .getRawMany<{ skillId: string; count: string }>();
-
-  return new Map(rows.map((r) => [r.skillId, parseInt(r.count, 10)]));
-}
-
-private mapToListItem(skill: Skill, favoritesCount: number) {
-  return {
-    id: skill.id,
-    title: skill.title,
-    createdAt: skill.createdAt,
-    favoritesCount,
-    user: {
-      id: skill.user.id,
-      name: skill.user.name,
-      avatar: skill.user.avatar,
-      age: this.calculateAge(skill.user.birthdate),
-      city: skill.user.city
-        ? { id: skill.user.city.id, name: skill.user.city.name }
-        : null,
-      wantToLearn: skill.user.wantToLearn.map((c) => ({
-        id: c.id,
-        name: c.name,
-      })),
-    },
-  };
-}
+  private mapToListItem(skill: Skill, favoritesCount: number) {
+    return {
+      id: skill.id,
+      title: skill.title,
+      createdAt: skill.createdAt,
+      categoryId: skill.category?.id ?? null,
+      favoritesCount,
+      user: {
+        id: skill.user.id,
+        name: skill.user.name,
+        avatar: skill.user.avatar,
+        age: this.calculateAge(skill.user.birthdate),
+        city: skill.user.city
+          ? { id: skill.user.city.id, name: skill.user.city.name }
+          : null,
+        wantToLearn: skill.user.wantToLearn.map((c) => ({
+          id: c.id,
+          name: c.name,
+        })),
+      },
+    };
+  }
 
   private calculateAge(birthdate: Date | null): number | null {
     if (!birthdate) return null;

@@ -6,7 +6,6 @@ import { Icon } from "../../shared/ui/icon";
 import { ModalUI } from "../../shared/ui/modal-ui";
 import { CreateOffer } from "../../features/modals/create-offer";
 import { ImageGallery } from "../../features/image-gallery/image-gallery";
-import { drumsImages } from "../../assets/images/skills";
 import styles from "./skill-page.module.css";
 import { SkillCardSlider } from "../../widgets/skillcard-slider";
 import { useDispatch, useSelector } from "../../services/store";
@@ -86,6 +85,7 @@ export function SkillPage() {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isRespondingToRequest, setIsRespondingToRequest] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -187,10 +187,7 @@ export function SkillPage() {
 
   const hasSkill = (currentUser?.skills?.length ?? 0) > 0;
 
-  const galleryImages =
-    selectedSkill?.images && selectedSkill.images.length > 0
-      ? selectedSkill.images
-      : drumsImages;
+  const galleryImages = selectedSkill?.images ?? [];
 
   // Проверяем, отправлено ли предложение
   const isOfferSent =
@@ -283,6 +280,28 @@ export function SkillPage() {
     }
 
     setIsOfferModalOpen(true);
+  };
+
+  const handleRespondToRequest = async (
+    requestId: string,
+    status: "accepted" | "rejected",
+  ) => {
+    if (isRespondingToRequest) {
+      return;
+    }
+
+    setIsRespondingToRequest(true);
+
+    try {
+      await dispatch(
+        updateRequestStatusAction({ id: requestId, status }),
+      ).unwrap();
+    } catch (error) {
+      console.error("Не удалось обновить статус запроса", error);
+      showToast("Не удалось обновить статус запроса", "error");
+    } finally {
+      setIsRespondingToRequest(false);
+    }
   };
 
   const handleOfferModalAction = async () => {
@@ -454,31 +473,29 @@ export function SkillPage() {
                         <div className={styles.requestActions}>
                           <Button
                             variant="secondary"
-                            onClick={() => {
-                              dispatch(
-                                updateRequestStatusAction({
-                                  id: incomingRequest.id,
-                                  status: "rejected",
-                                }),
-                              );
-                            }}
+                            onClick={() =>
+                              handleRespondToRequest(
+                                incomingRequest.id,
+                                "rejected",
+                              )
+                            }
                             className={styles.rejectButton}
                             fullWidth
+                            disabled={isRespondingToRequest}
                           >
                             Отклонить
                           </Button>
                           <Button
                             variant="primary"
-                            onClick={() => {
-                              dispatch(
-                                updateRequestStatusAction({
-                                  id: incomingRequest.id,
-                                  status: "accepted",
-                                }),
-                              );
-                            }}
+                            onClick={() =>
+                              handleRespondToRequest(
+                                incomingRequest.id,
+                                "accepted",
+                              )
+                            }
                             className={styles.acceptButton}
                             fullWidth
+                            disabled={isRespondingToRequest}
                           >
                             Принять обмен
                           </Button>

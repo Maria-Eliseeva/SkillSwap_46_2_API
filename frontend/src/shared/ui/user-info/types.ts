@@ -7,6 +7,7 @@ export interface UserInfoProps {
     birthDate: string; // формат "YYYY-MM-DD"
     gender: OptionType | null;
     city: string;
+    cityId?: string | null;
     about: string;
     avatar?: string;
   };
@@ -16,6 +17,7 @@ export interface UserInfoProps {
     birthDate: string;
     gender: OptionType | null;
     city: string;
+    cityId: string | null;
     about: string;
   }) => void;
   errors?: {

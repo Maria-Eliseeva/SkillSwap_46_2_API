@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { setSearchQuery } from "../../services/filter/slice.ts";
 import { useDispatch, useSelector } from "../../services/store.ts";
@@ -29,9 +29,15 @@ export function Header() {
   const user = useSelector((state) => state.auth.currentUser);
   const categories = useSelector((state) => state.category.categories);
   const isCategoriesLoading = useSelector((state) => state.category.loading);
+  const hasTriedFetchingCategories = useRef(false);
 
   useEffect(() => {
-    if (categories.length === 0 && !isCategoriesLoading) {
+    if (
+      categories.length === 0 &&
+      !isCategoriesLoading &&
+      !hasTriedFetchingCategories.current
+    ) {
+      hasTriedFetchingCategories.current = true;
       dispatch(fetchCategories());
     }
   }, [categories.length, dispatch, isCategoriesLoading]);
