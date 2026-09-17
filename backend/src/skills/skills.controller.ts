@@ -54,7 +54,6 @@ export class SkillsController {
     return this.skillsService.getFavoriteSkills(req.user.sub);
   }
 
-
   @Get(':id/similar')
   findSimilarUsers(@Param('id') id: string) {
     return this.skillsService.findSimilarUsers(id);

@@ -3,6 +3,7 @@ import { useDispatch, useSelector, type RootState } from "../../services/store";
 import {
   fetchProfile,
   fetchUpdateCurrentUser,
+  fetchUpdateWantToLearn,
 } from "../../services/auth/actions";
 import { UserInfo } from "../../shared/ui/user-info";
 import type { UserInfoProps } from "../../shared/ui/user-info";
@@ -72,6 +73,12 @@ export const ProfilePage: FC = () => {
         cityId: data.cityId,
       }),
     );
+
+    await dispatch(
+      fetchUpdateWantToLearn(
+        data.wantToLearnSubcategoryId ? [data.wantToLearnSubcategoryId] : [],
+      ),
+    );
   };
 
   const mappedUser: UserInfoProps["user"] | undefined = currentUser
@@ -94,6 +101,8 @@ export const ProfilePage: FC = () => {
         cityId: currentUser.cityId ?? null,
         about: currentUser.aboutMe ?? "",
         avatar: resolveAssetUrl(currentUser.avatar),
+        wantToLearnSubcategoryId:
+          currentUser.interestedSkillsSubcategoriesIds?.[0] ?? null,
       }
     : undefined;
 
