@@ -13,11 +13,9 @@ import { ProfileMenu } from "../../shared/ui/profile-menu";
 import { Search } from "../../shared/ui/search";
 import { SkillCategoryGroup } from "../../shared/ui/skill-category-group";
 import type { TSkillCategoryProps } from "../../shared/ui/skill-category/types";
-import { DeveloperCardGroup } from "../developer-card";
 import styles from "./header.module.css";
 import { fetchLogout } from "../../services/auth/actions";
 import { HeaderIcons } from "../../shared/ui/header-icons";
-import { developers } from "../../shared/constants/developers";
  
  
 export function Header() {
@@ -77,19 +75,9 @@ export function Header() {
       <nav className={styles.nav} aria-label="Основная навигация">
         <ul className={styles.navList}>
           <li>
-            <Popover
-              trigger={
-                <Button variant="text" className={styles.navLink}>
-                  О проекте
-                </Button>
-              }
-              position="bottom"
-              offset={8}
-              closeOnEscape={true}
-              closeOnOverlayClick={true}
-            >
-              <DeveloperCardGroup developers={developers} />
-            </Popover>
+            <Button variant="text" className={styles.navLink}>
+              О проекте
+            </Button>
           </li>
  
           <li>
