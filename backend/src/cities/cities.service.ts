@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, IsNull, Not } from 'typeorm';
 import { City } from './entities/city.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CityShort } from './cities.types';
@@ -13,6 +13,11 @@ import { CreateCityDto } from './dto/create-city.dto';
 
 const SEARCH_RESULTS_LIMIT = 10;
 
+export interface SearchCitiesOptions {
+  search?: string;
+  major?: boolean;
+}
+
 @Injectable()
 export class CitiesService {
   constructor(
@@ -20,7 +25,20 @@ export class CitiesService {
     private readonly cityRepository: Repository<City>,
   ) {}
 
-  async search(search?: string): Promise<CityShort[]> {
+  async search(options: SearchCitiesOptions = {}): Promise<CityShort[]> {
+    const { search, major } = options;
+
+    if (major) {
+      return this.cityRepository.find({
+        select: ['id', 'name', 'region'],
+        where: {
+          sortOrder: Not(IsNull()),
+          ...(search ? { name: ILike(`%${search}%`) } : {}),
+        },
+        order: { sortOrder: 'ASC' },
+      });
+    }
+
     return this.cityRepository.find({
       select: ['id', 'name', 'region'],
       where: search ? { name: ILike(`%${search}%`) } : {},

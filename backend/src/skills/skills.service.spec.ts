@@ -22,6 +22,7 @@ describe('SkillsService', () => {
       | 'createQueryBuilder'
       | 'preload'
       | 'delete'
+      | 'manager'
     >
   >;
 
@@ -53,6 +54,15 @@ describe('SkillsService', () => {
     distinct: jest.Mock;
     take: jest.Mock;
     getMany: jest.Mock;
+  };
+
+  let favoritesCountsQueryBuilder: {
+    select: jest.Mock;
+    addSelect: jest.Mock;
+    from: jest.Mock;
+    where: jest.Mock;
+    groupBy: jest.Mock;
+    getRawMany: jest.Mock;
   };
 
   const ownerId = 'owner-1';
@@ -101,6 +111,15 @@ describe('SkillsService', () => {
       getManyAndCount: jest.fn(),
     };
 
+    favoritesCountsQueryBuilder = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      from: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    };
+
     skillsRepository = {
       create: jest.fn(),
       save: jest.fn(),
@@ -110,6 +129,11 @@ describe('SkillsService', () => {
         .mockReturnValue(queryBuilder as unknown as SelectQueryBuilder<Skill>),
       preload: jest.fn(),
       delete: jest.fn(),
+      manager: {
+        createQueryBuilder: jest
+          .fn()
+          .mockReturnValue(favoritesCountsQueryBuilder),
+      } as unknown as Repository<Skill>['manager'],
     };
 
     categoriesRepository = {

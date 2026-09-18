@@ -3,6 +3,7 @@ import type {
   TGenderOption,
   TSkillOption,
 } from "../../widgets/filter-bar/radio-groups/types";
+import { GENDER_FILTER_MAP } from "./genderFilterMap";
 
 export const matchesCityFeed = (
   item: IPublicSkillCard,
@@ -11,13 +12,13 @@ export const matchesCityFeed = (
   cities.length === 0 ||
   (!!item.user.city && cities.includes(item.user.city.name));
 
-// TODO: бэкенд пока не отдаёт user.gender в GET /skills — фильтр по полу
-// временно не сужает результаты. Когда поле добавят: положить его в тип
-// IPublicSkillCard.user и заменить return true на item.user.gender === gender.
 export const matchesGenderFeed = (
-  _item: IPublicSkillCard,
-  _gender: TGenderOption,
-): boolean => true;
+  item: IPublicSkillCard,
+  gender: TGenderOption,
+): boolean => {
+  if (gender === "all") return true;
+  return item.user.gender === GENDER_FILTER_MAP[gender];
+};
 
 export const matchesSkillFeed = (
   item: IPublicSkillCard,
@@ -26,14 +27,14 @@ export const matchesSkillFeed = (
 ): boolean => {
   if (subCategoryIds.length === 0) return true;
 
+  const canTeach =
+    !!item.categoryId && subCategoryIds.includes(item.categoryId);
   const wantsToLearn = (item.user.wantToLearn ?? []).some((w) =>
     subCategoryIds.includes(w.id),
   );
 
-  // TODO: у навыка пока нет собственной категории в ответе GET /skills,
-  // поэтому "чему может научить" временно не фильтруется по категории.
-  if (skillOption === "can-teach") return true;
+  if (skillOption === "can-teach") return canTeach;
   if (skillOption === "want-to-learn") return wantsToLearn;
 
-  return wantsToLearn; // 'all'
+  return canTeach || wantsToLearn; // 'all'
 };

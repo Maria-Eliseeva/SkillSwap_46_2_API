@@ -26,13 +26,16 @@ import {
   fetchCategories,
   fetchSubCategories,
 } from "../../../../services/category/actions";
-import { useImageUpload } from "../../../hooks/useImageUpload";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { getCities, type ICity } from "../../../../api/cityApi";
+import { validateImageFile } from "../../../../api/imageApi";
+import { showToast } from "../../../../utils/toast";
 import { USE_TOAST } from "../../../../config/apiConfig";
- 
+
 export const AuthorRegister: FC<AuthorRegisterProps> = ({
   avatar,
   setAvatar,
+  setAvatarFile,
   name,
   setName,
   birthDate,
@@ -47,87 +50,110 @@ export const AuthorRegister: FC<AuthorRegisterProps> = ({
   errorText,
 }) => {
   const dispatch = useDispatch();
- 
+
   const categories = useSelector(selectCategories);
   const getSubcategoriesByCategoryId = useSelector(
     selectSubCategoriesByCategoryId,
   );
- 
+
   useEffect(() => {
     dispatch(fetchCategories());
     dispatch(fetchSubCategories());
   }, [dispatch]);
- 
-  const { uploadSingle } = useImageUpload();
-  
+
+  const [citySearch, setCitySearch] = useState("");
   const [cities, setCities] = useState<ICity[]>([]);
- 
+
+  const debouncedCitySearch = useDebounce(citySearch, 300);
+
   useEffect(() => {
-    getCities()
-      .then(setCities)
-      .catch((err) => console.error("Не удалось загрузить города", err));
-  }, []);
- 
-  const cityOptions = cities.map((c) => ({ value: c.id, title: c.name }));
- 
+    let isCancelled = false;
+
+    const loadCities = async () => {
+      try {
+        const results = await getCities(debouncedCitySearch || undefined);
+        if (!isCancelled) {
+          setCities(results);
+        }
+      } catch (err) {
+        console.error("Не удалось загрузить города", err);
+        if (!isCancelled) {
+          setCities([]);
+        }
+      }
+    };
+
+    loadCities();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedCitySearch]);
+
+  const cityOptions = useMemo(
+    () => cities.map((c) => ({ value: c.id, title: c.name })),
+    [cities],
+  );
+
   const [selectedCategory, setSelectedCategory] = useState<OptionType | null>(
     null,
   );
   const [selectedSubcategory, setSelectedSubcategory] =
     useState<OptionType | null>(null);
- 
+
   const today = new Date();
   const minBirthDateObject = subYears(today, 112);
   const maxBirthDateObject = subYears(today, 18);
- 
+
   const minBirthDate = format(minBirthDateObject, "yyyy-MM-dd");
   const maxBirthDate = format(maxBirthDateObject, "yyyy-MM-dd");
- 
+
   const birthDateError = useMemo(() => {
     if (!birthDate) {
       return "";
     }
- 
+
     const parsed = parse(birthDate, "yyyy-MM-dd", new Date());
- 
+
     if (Number.isNaN(parsed.getTime())) {
       return "Введите корректную дату";
     }
- 
+
     if (
       isBefore(parsed, minBirthDateObject) ||
       isAfter(parsed, maxBirthDateObject)
     ) {
       return "Можно указать возраст только от 18 до 112 лет";
     }
- 
+
     return "";
   }, [birthDate, minBirthDateObject, maxBirthDateObject]);
- 
+
   const handleAvatarEdit = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const result = await uploadSingle(file);
-        if (result?.url) {
-          setAvatar(result.url);
-        }
+      if (!file) return;
+
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        showToast(validationError, "error");
+        return;
       }
+
+      setAvatarFile(file);
+      setAvatar(URL.createObjectURL(file));
     };
     input.click();
   };
- 
-  // Одна категория и одна подкатегория — без списка тегов и кнопки
-  // "Добавить". Множественный выбор интересов переедет в личный кабинет
-  // отдельной задачей позже.
+
   const availableCategories = categories;
- 
+
   const availableSubcategories = useMemo(() => {
     if (!selectedCategory) return [];
- 
+
     return getSubcategoriesByCategoryId(selectedCategory.value).map(
       (sub) => ({
         value: sub.id,
@@ -135,31 +161,37 @@ export const AuthorRegister: FC<AuthorRegisterProps> = ({
       }),
     );
   }, [selectedCategory, getSubcategoriesByCategoryId]);
- 
+
   const handleCategoryChange = (option: OptionType | null) => {
     setSelectedCategory(option);
     setSelectedSubcategory(null);
     setLearningSkills([]);
   };
- 
+
   const handleSubcategoryChange = (option: OptionType | null) => {
     setSelectedSubcategory(option);
     setLearningSkills(option ? [String(option.value)] : []);
   };
- 
-  // Обязательно только имя. Остальные поля опциональны — так же, как на
-  // бэкенде для PATCH /users/me (там всё, кроме имени, необязательно).
-  // Дату рождения всё же не даём отправить, если она заполнена, но с ошибкой.
+
+  const handleCitySearchChange = (search: string) => {
+    setCitySearch(search);
+  };
+
+  const handleCityChange = (option: OptionType | null) => {
+    setCity(option);
+    setCitySearch("");
+  };
+
   const isDisabled = !name.trim() || Boolean(birthDateError);
- 
+
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
- 
+
     if (!isDisabled) {
       onNext();
     }
   };
- 
+
   return (
     <AuthLayout
       type="register"
@@ -214,9 +246,10 @@ export const AuthorRegister: FC<AuthorRegisterProps> = ({
             placeholder="Не указан"
             options={cityOptions}
             selected={city}
-            onChange={setCity}
+            onChange={handleCityChange}
             searchable
             searchPlaceholder="Введите город"
+            onSearchChange={handleCitySearchChange}
           />
           <Dropdown
             title="Категория навыка, которому хотите научиться"
@@ -238,9 +271,9 @@ export const AuthorRegister: FC<AuthorRegisterProps> = ({
           />
         </div>
         <div className={styles.buttons}>
-        {errorText && !USE_TOAST && (
-          <p className={styles.error}>{errorText}</p>
-        )}
+          {errorText && !USE_TOAST && (
+            <p className={styles.error}>{errorText}</p>
+          )}
           <Button
             variant="secondary"
             onClick={onBack}

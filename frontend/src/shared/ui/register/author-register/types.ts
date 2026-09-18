@@ -4,6 +4,7 @@ import type { OptionType } from "../../dropdown/types";
 export type AuthorRegisterProps = {
   avatar: string;
   setAvatar: Dispatch<SetStateAction<string>>;
+  setAvatarFile: Dispatch<SetStateAction<File | null>>;
   name: string;
   setName: Dispatch<SetStateAction<string>>;
   birthDate: string;

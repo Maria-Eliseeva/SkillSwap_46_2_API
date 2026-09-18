@@ -3,6 +3,7 @@ import { useDispatch, useSelector, type RootState } from "../../services/store";
 import {
   fetchProfile,
   fetchUpdateCurrentUser,
+  fetchUpdateWantToLearn,
 } from "../../services/auth/actions";
 import { UserInfo } from "../../shared/ui/user-info";
 import type { UserInfoProps } from "../../shared/ui/user-info";
@@ -63,12 +64,20 @@ export const ProfilePage: FC = () => {
         name: data.name,
         birthDate: data.birthDate,
         gender:
-          data.gender?.value === "male" || data.gender?.value === "female"
-            ? data.gender.value
-            : "unspecified",
-        city: data.city,
+          data.gender?.value === "MALE"
+            ? "MALE"
+            : data.gender?.value === "FEMALE"
+              ? "FEMALE"
+              : "UNSPECIFIED",
         aboutMe: data.about,
+        cityId: data.cityId,
       }),
+    );
+
+    await dispatch(
+      fetchUpdateWantToLearn(
+        data.wantToLearnSubcategoryId ? [data.wantToLearnSubcategoryId] : [],
+      ),
     );
   };
 
@@ -81,16 +90,19 @@ export const ProfilePage: FC = () => {
           ? {
               value: currentUser.gender,
               title:
-                currentUser.gender === "male"
+                currentUser.gender === "MALE"
                   ? "Мужской"
-                  : currentUser.gender === "female"
+                  : currentUser.gender === "FEMALE"
                     ? "Женский"
                     : "Другой",
             }
           : null,
         city: currentUser.city,
+        cityId: currentUser.cityId ?? null,
         about: currentUser.aboutMe ?? "",
         avatar: resolveAssetUrl(currentUser.avatar),
+        wantToLearnSubcategoryId:
+          currentUser.interestedSkillsSubcategoriesIds?.[0] ?? null,
       }
     : undefined;
 
