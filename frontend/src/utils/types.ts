@@ -27,6 +27,7 @@ export interface IUserProfile extends IUser {
   birthDate: string;
   gender?: TGender;
   city: string;
+  cityId?: TId | null;
   avatar: string;
   aboutMe?: string; // "о себе"
   likesSkillsIds: TId[]; // массив id навыков, которые лайкнул пользователь
@@ -94,6 +95,7 @@ export interface ISkillBackend {
   images: string[];
   user: Partial<IUserProfileOnBackend>;
   category: ISkillsCategory;
+  categoryId?: TId | null;
   createdAt: string;
 }
 
@@ -217,9 +219,10 @@ export type TRegisterResponse = { user: IRegisterResponseUser };
 
 /** ДАННЫЕ ДЛЯ PATCH /users/me — все поля опциональны */
 export interface IUpdateProfileData {
+  email?: string;
   name?: string;
   birthdate?: string;
-  gender?: "MALE" | "FEMALE";
+  gender?: "MALE" | "FEMALE" | "UNSPECIFIED";
   cityId?: TId | null;
   avatar?: string;
   about?: string;
@@ -237,12 +240,15 @@ export interface IWantToLearnCategory {
 export interface IPublicSkillCard {
   id: TId;
   title: string;
+  favoritesCount: number;
   createdAt: string;
+  categoryId: TId | null;
   user: {
     id: TId;
     name: string;
     avatar: string | null;
     age: number | null;
+    gender: TGender | null;
     city: { id: TId; name: string } | null;
     wantToLearn: { id: TId; name: string }[] | null;
   };

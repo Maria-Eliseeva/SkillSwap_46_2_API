@@ -10,6 +10,10 @@ import {
   fetchUpdateWantToLearn,
   updatePassword,
 } from "./actions.ts";
+import {
+  appendSkill,
+  removeSkill,
+} from "../skill/actions";
 import type { AuthState } from "./types.ts";
 import type { IRealUserMeResponse, IUserProfile } from "../../utils/types.ts";
 type NormalizableUser = {
@@ -74,7 +78,9 @@ const mapRealUserToProfile = (
   birthDate: user.birthdate ?? "",
   gender: (user.gender as IUserProfile["gender"]) ?? previous?.gender,
   city: user.city?.name ?? "",
+  cityId: user.city?.id ?? previous?.cityId ?? null,
   avatar: user.avatar ?? "",
+  aboutMe: user.about ?? previous?.aboutMe ?? "",
   likesSkillsIds: previous?.likesSkillsIds ?? [],
   userSkill: previous?.userSkill ?? "",
   skills: user.skills?.map((skill) => skill.id) ?? previous?.skills ?? [],
@@ -169,12 +175,38 @@ export const authSlice = createSlice({
       })
       .addCase(fetchUpdateMyProfile.rejected, handleRejected)
 
-      // updateWantToLearn (шаг 2 регистрации)
+      // updateWantToLearn (шаг 2 регистрации / редактирование профиля) —
+      // бэкенд отдаёт актуальный список категорий, GET /users/me эту связь
+      // не возвращает, поэтому синхронизируем currentUser сами.
       .addCase(fetchUpdateWantToLearn.pending, handlePending)
-      .addCase(fetchUpdateWantToLearn.fulfilled, (state) => {
+      .addCase(fetchUpdateWantToLearn.fulfilled, (state, action) => {
         state.loading = false;
+        if (state.currentUser) {
+          state.currentUser.interestedSkillsSubcategoriesIds =
+            action.payload.map((category) => category.id);
+        }
       })
-      .addCase(fetchUpdateWantToLearn.rejected, handleRejected);
+      .addCase(fetchUpdateWantToLearn.rejected, handleRejected)
+
+      // appendSkill/removeSkill — GET /users/me не дёргается заново после
+      // создания/удаления навыка, поэтому currentUser.skills синхронизируем
+      // здесь же, чтобы hasSkill на skill-page не оставался протухшим до F5.
+      .addCase(appendSkill.fulfilled, (state, action) => {
+        if (state.currentUser) {
+          const newSkillId = action.payload.data.id;
+          const skills = state.currentUser.skills ?? [];
+          if (!skills.includes(newSkillId)) {
+            state.currentUser.skills = [...skills, newSkillId];
+          }
+        }
+      })
+      .addCase(removeSkill.fulfilled, (state, action) => {
+        if (state.currentUser) {
+          state.currentUser.skills = (state.currentUser.skills ?? []).filter(
+            (skillId) => skillId !== action.payload,
+          );
+        }
+      });
 
     builder
       .addCase(fetchCheckUser.pending, (state) => {

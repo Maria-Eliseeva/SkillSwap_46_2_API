@@ -48,6 +48,12 @@ export class SkillsController {
     return this.skillsService.findAll(dto);
   }
 
+  @Get('favorites')
+  @UseGuards(AccessTokenGuard)
+  getFavorites(@Req() req: RequestWithUser) {
+    return this.skillsService.getFavoriteSkills(req.user.sub);
+  }
+
   @Get(':id/similar')
   findSimilarUsers(@Param('id') id: string) {
     return this.skillsService.findSimilarUsers(id);

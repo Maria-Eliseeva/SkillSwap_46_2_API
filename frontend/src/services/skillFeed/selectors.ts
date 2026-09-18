@@ -14,9 +14,9 @@ export const selectNewestSkillFeed = createSelector(selectSkillFeed, (items) =>
   ),
 );
 
-// TODO: бэкенд пока не отдаёт счётчик добавлений в избранное на уровне
-// списка навыков — используем "Новое" как временную замену "Популярному".
-export const selectPopularSkillFeed = selectNewestSkillFeed;
+export const selectPopularSkillFeed = createSelector(selectSkillFeed, (items) =>
+  [...items].sort((a, b) => b.favoritesCount - a.favoritesCount),
+);
 
 export const selectRecommendedSkillFeed = createSelector(
   selectSkillFeed,
@@ -31,9 +31,16 @@ export const selectRecommendedSkillFeed = createSelector(
         )
       : items;
 
-    // TODO: у навыка пока нет собственной категории в ответе GET /skills,
-    // поэтому персонализация "по интересам" временно недоступна.
-    return getRandom(withoutOwn);
+    const interestIds = currentUser?.interestedSkillsSubcategoriesIds ?? [];
+    const matchingInterests = interestIds.length
+      ? withoutOwn.filter(
+          (item) => !!item.categoryId && interestIds.includes(item.categoryId),
+        )
+      : [];
+
+    return getRandom(
+      matchingInterests.length > 0 ? matchingInterests : withoutOwn,
+    );
   },
 );
 

@@ -3,13 +3,7 @@ import type {
   TGenderOption,
   TSkillOption,
 } from "../../widgets/filter-bar/radio-groups/types";
-
-// Фильтр по полу пока работает со старыми значениями (male/female),
-// а IUserProfile.gender переведён на TGender (MALE/FEMALE/UNSPECIFIED).
-const GENDER_FILTER_MAP: Record<Exclude<TGenderOption, "all">, IUserProfile["gender"]> = {
-  male: "MALE",
-  female: "FEMALE",
-};
+import { GENDER_FILTER_MAP } from "./genderFilterMap";
 
 export const matchesGender = (
   user: IUserProfile,
