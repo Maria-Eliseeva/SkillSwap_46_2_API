@@ -28,10 +28,11 @@ import {
   fetchMyRequests,
   updateRequestStatusAction,
 } from "../../services/request/actions";
-import { fetchUpdateCurrentUser } from "../../services/auth/actions";
 import { showToast } from "../../utils/toast";
 import {formatUser} from "../../api/userApi";
-import type { IUserProfileOnBackend } from "../../utils/types";
+import type { IPublicSkillCard, IUserProfileOnBackend } from "../../utils/types";
+import { toggleFavoriteSkill } from "../../services/favorites/actions";
+import { selectFavoriteIds } from "../../services/favorites/slice";
 
 const getAgeNumber = (birthDate: string): number => {
   const today = new Date();
@@ -81,10 +82,10 @@ export function SkillPage() {
   const currentUser = useSelector((state) => state.auth.currentUser);
   const requestsReceived = useSelector((state) => state.requests.received);
   const sentRequests = useSelector((state) => state.requests.sent);
+  const favoriteIds = useSelector(selectFavoriteIds);
 
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
-  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [isRespondingToRequest, setIsRespondingToRequest] = useState(false);
 
   useEffect(() => {
@@ -182,8 +183,7 @@ export function SkillPage() {
   );
 
   const isFavorite = Boolean(
-    selectedUser.userSkill &&
-      (currentUser?.likesSkillsIds ?? []).includes(selectedUser.userSkill),
+    selectedSkill && favoriteIds.includes(selectedSkill.id),
   );
 
   const isOwnProfile = currentUser?.id === selectedUser?.id;
@@ -237,34 +237,13 @@ export function SkillPage() {
       );
     });
 
-  const handleFavoriteClick = async (skillId: string | null | undefined) => {
-    if (!currentUser || !skillId || isTogglingFavorite) {
+  const handleFavoriteClick = (skill: IPublicSkillCard | null | undefined) => {
+    if (!currentUser || !skill) {
       return;
     }
 
-    setIsTogglingFavorite(true);
-
-    const likedSkills = currentUser.likesSkillsIds ?? [];
-    const isLiked = likedSkills.includes(skillId);
-
-    const nextLikesSkillsIds = isLiked
-      ? likedSkills.filter((id) => id !== skillId)
-      : [...likedSkills, skillId];
-
-    try {
-      await dispatch(
-        fetchUpdateCurrentUser({ likesSkillsIds: nextLikesSkillsIds }),
-      ).unwrap();
-      showToast(
-        isLiked ? "Удалено из избранного" : "Добавлено в избранное",
-        "success",
-      );
-    } catch (error) {
-      console.error("Не удалось обновить избранное", error);
-      showToast("Не удалось обновить избранное", "error");
-    } finally {
-      setIsTogglingFavorite(false);
-    }
+    const isCurrentlyFavorite = favoriteIds.includes(skill.id);
+    dispatch(toggleFavoriteSkill({ skill, isCurrentlyFavorite }));
   };
 
   const handleCopyLink = async () => {
@@ -406,8 +385,7 @@ export function SkillPage() {
               type="button"
               className={styles.actionButton}
               aria-label="Добавить в избранное"
-              onClick={() => handleFavoriteClick(selectedUser.userSkill ?? undefined)}
-              disabled={isTogglingFavorite}
+              onClick={() => handleFavoriteClick(selectedSkill)}
             >
               <Icon
                 name={isFavorite ? "like-filled" : "like"}
@@ -547,32 +525,39 @@ export function SkillPage() {
 
         {preparedSimilarUsers.length > 0 ? (
           <SkillCardSlider
-            cards={preparedSimilarUsers.map((user) => ({
-              id: user.userSkill,
-              avatar: user.avatar,
-              name: user.name,
-              city: user.city,
-              age: user.age,
-              canTeach: user.canTeach,
-              wantsToLearn: user.wantsToLearn,
-              isFavorite: Boolean(
-                user.userSkill &&
-                  (currentUser?.likesSkillsIds ?? []).includes(user.userSkill),
-              ),
-              onFavoriteClick: () => handleFavoriteClick(user.userSkill ?? undefined),
-              teachColor: getTeachColor(
-                user.userSkill,
-                skills,
-                subCategories,
-                categories,
-              ),
-              wantsToLearnColors: getLearnColors(
-                user.interestedSkillsSubcategoriesIds,
-                subCategories,
-                categories,
-              ),
-              disableDetails: String(user.id) === String(currentUser?.id),
-            }))}
+            cards={preparedSimilarUsers.map((user) => {
+              const userSkill = user.userSkill
+                ? (skills.find(
+                    (skill) => String(skill.id) === String(user.userSkill),
+                  ) ?? null)
+                : null;
+
+              return {
+                id: user.userSkill,
+                avatar: user.avatar,
+                name: user.name,
+                city: user.city,
+                age: user.age,
+                canTeach: user.canTeach,
+                wantsToLearn: user.wantsToLearn,
+                isFavorite: Boolean(
+                  userSkill && favoriteIds.includes(userSkill.id),
+                ),
+                onFavoriteClick: () => handleFavoriteClick(userSkill),
+                teachColor: getTeachColor(
+                  user.userSkill,
+                  skills,
+                  subCategories,
+                  categories,
+                ),
+                wantsToLearnColors: getLearnColors(
+                  user.interestedSkillsSubcategoriesIds,
+                  subCategories,
+                  categories,
+                ),
+                disableDetails: String(user.id) === String(currentUser?.id),
+              };
+            })}
           />
         ) : (
           <div className={styles.emptySimilar}>
