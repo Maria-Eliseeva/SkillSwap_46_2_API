@@ -1,7 +1,8 @@
 import type { TId } from "../../utils/types";
 
-// Color is based only on the stable parent category id, so renamed or newly
-// added database categories require no corresponding frontend change.
+// Color is assigned by a category's position in the full categories list
+// (not by name or a hash of its id), so it stays distinct across categories
+// as long as their count doesn't exceed the palette size below.
 const CATEGORY_COLORS = [
   "var(--color-category-business)",
   "var(--color-category-creative)",
@@ -26,14 +27,17 @@ type WithSkillSubcategory = WithId & {
   skillSubcategory?: TId | null;
 };
 
-export const getCategoryColorById = (categoryId: TId): string => {
-  let hash = 0;
+export const getCategoryColorById = <TCategory extends WithId>(
+  categoryId: TId,
+  categories: ReadonlyArray<TCategory>,
+): string => {
+  const index = categories.findIndex((category) => category.id === categoryId);
 
-  for (let index = 0; index < categoryId.length; index += 1) {
-    hash = (hash * 31 + categoryId.charCodeAt(index)) >>> 0;
+  if (index === -1) {
+    return DEFAULT_LEARN_COLOR;
   }
 
-  return CATEGORY_COLORS[hash % CATEGORY_COLORS.length] ?? DEFAULT_LEARN_COLOR;
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length] ?? DEFAULT_LEARN_COLOR;
 };
 export const getCategoryColorBySubcategoryId = <
   TSubCategory extends WithSkillCategoryId,
@@ -61,7 +65,7 @@ export const getCategoryColorBySubcategoryId = <
     return undefined;
   }
 
-  return getCategoryColorById(category.id);
+  return getCategoryColorById(category.id, categories);
 };
 
 export const getTeachColor = <

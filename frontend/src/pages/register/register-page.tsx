@@ -4,6 +4,7 @@ import { AccountRegister, AuthorRegister } from "../../shared/ui/register";
 import type { OptionType } from "../../shared/ui/dropdown/types";
 import { handleError } from "../../utils/errors/errorUtils";
 import type { TLoginUserData } from "../../utils/types";
+import { uploadImage } from "../../api/imageApi";
 import {
   fetchProfile,
   fetchRegister,
@@ -18,6 +19,7 @@ export const Register: FC = () => {
   const [password, setPassword] = useState("");
  
   const [avatar, setAvatar] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<OptionType | null>(null);
@@ -41,13 +43,23 @@ export const Register: FC = () => {
       const credentials: TLoginUserData = { email, password };
       await dispatch(fetchRegister(credentials)).unwrap();
  
+      let avatarUrl = "";
+      if (avatarFile) {
+        try {
+          const uploaded = await uploadImage(avatarFile);
+          avatarUrl = uploaded.url;
+        } catch (err) {
+          console.error("Не удалось загрузить аватар", err);
+        }
+      }
+
       // PATCH /users/me — шлём только реально заполненные поля
       const profilePayload: Record<string, string> = {};
       if (name.trim()) profilePayload.name = name.trim();
       if (birthDate) profilePayload.birthdate = birthDate;
       if (gender?.value) profilePayload.gender = String(gender.value);
       if (city?.value) profilePayload.cityId = String(city.value);
-      if (avatar) profilePayload.avatar = avatar;
+      if (avatarUrl) profilePayload.avatar = avatarUrl;
  
       if (Object.keys(profilePayload).length > 0) {
         await dispatch(fetchUpdateMyProfile(profilePayload)).unwrap();
@@ -92,6 +104,7 @@ export const Register: FC = () => {
     <AuthorRegister
       avatar={avatar}
       setAvatar={setAvatar}
+      setAvatarFile={setAvatarFile}
       name={name}
       setName={setName}
       birthDate={birthDate}

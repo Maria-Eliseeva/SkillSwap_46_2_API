@@ -1,5 +1,6 @@
 import { USE_MOCKS } from "../config/apiConfig";
 import type {
+  IPublicSkillCard,
   TId,
   TModifySkillData,
   TSkillData,
@@ -9,29 +10,38 @@ import type {
   ISkill
 } from "../utils/types";
 import { request } from "./client";
-
+ 
 interface ApiResponse<T> {
   status: boolean;
   data: T;
 }
-
+ 
 const formatSkill = (skill: Partial<ISkillBackend> | null | undefined): ISkill => ({
   id: skill?.id ?? "",
-
+ 
   title: skill?.title ?? "",
   description: skill?.description ?? "",
   images: Array.isArray(skill?.images) ? skill.images : [],
-
+ 
   user: skill?.user ?? undefined,
   category: skill?.category ?? undefined,
-  skillSubcategory: skill?.category?.id ?? "",
+  skillSubcategory: skill?.category?.id ?? skill?.categoryId ?? "",
 
   createdAt: skill?.createdAt ?? new Date().toISOString(),
   updatedAt: skill?.createdAt ?? new Date().toISOString(),
 });
-
+ 
+const toBackendPayload = (skill: TSkillData | Partial<TSkillData>) => {
+  const { skillSubcategory, category: _category, user: _user, ...rest } = skill;
+  return {
+    ...rest,
+    categoryId: skillSubcategory,
+  };
+};
+ 
+ 
 //! ЗАПРПОСЫ БЕЗ АВТОРИЗАЦИИ
-
+ 
 /** API: ПОЛУЧЕНИЕ ВСЕХ НАВЫКОВ */
 export const getSkills = (): Promise<TSkillsResponse> => {
   if (USE_MOCKS) {
@@ -39,13 +49,13 @@ export const getSkills = (): Promise<TSkillsResponse> => {
       .then((res) => res.json())
       .then((response) => response);
   }
-
+ 
   return request<ApiResponse<ISkillBackend[]>>("/skills").then((response) => ({
     status: response.status,
     data: response.data.map(formatSkill),
   }));
 };
-
+ 
 /** API: ПОЛУЧЕНИЕ НАВЫКА ПО ЕГО ID */
 export const getSkillById = (skillId: TId): Promise<TSkillResponse> => {
   if (USE_MOCKS) {
@@ -56,17 +66,15 @@ export const getSkillById = (skillId: TId): Promise<TSkillResponse> => {
         data: response.data[0],
       }));
   }
-
-  return request<ApiResponse<ISkillBackend>>(`/skills/${skillId}`).then(
-    (response) => ({
-      status: response.status,
-      data: formatSkill(response.data),
-    }),
-  );
+ 
+  return request<ISkillBackend>(`/skills/${skillId}`).then((skill) => ({
+    status: true,
+    data: formatSkill(skill),
+  }));
 };
-
+ 
 //! ЗАПРПОСЫ С АВТОРИЗАЦИЕЙ
-
+ 
 /** API: ДОБАВЛЕНИЕ НАВЫКА */
 export const addSkill = (skill: TSkillData): Promise<TSkillResponse> => {
   if (USE_MOCKS) {
@@ -83,31 +91,31 @@ export const addSkill = (skill: TSkillData): Promise<TSkillResponse> => {
       },
     });
   }
-  return request<ApiResponse<ISkillBackend>>("/skills", {
+  return request<ISkillBackend>("/skills", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(skill),
-  }).then((response) => ({
-    status: response.status,
-    data: formatSkill(response.data),
+    body: JSON.stringify(toBackendPayload(skill)),
+  }).then((skill) => ({
+    status: true,
+    data: formatSkill(skill),
   }));
 };
-
+ 
 /** API: УДАЛЕНИЕ НАВЫКА ПО ЕГО ID */
 export const deleteSkillById = async (
   skillId: TId,
 ): Promise<{ status: boolean }> => {
   if (USE_MOCKS) return { status: true };
-
+ 
   await request<void>(`/skills/${skillId}`, {
     method: "DELETE",
   });
-
+ 
   return { status: true };
 };
-
+ 
 /** API: МОДИФИКАЦИЯ НАВЫКА */
 export const modifySkill = (
   skill: TModifySkillData,
@@ -120,29 +128,29 @@ export const modifySkill = (
         data: response.data[0],
       }));
   }
-
+ 
   const { id, ...skillData } = skill;
-
+ 
   // Если id навыка не указан
   if (!id) {
     console.error("Ошибка модификации навыка: отсутствует id навыка");
     return Promise.reject();
   }
-
-  return request<ApiResponse<ISkillBackend>>(`/skills/${id}`, {
+ 
+  return request<ISkillBackend>(`/skills/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(skillData),
-  }).then((response) => ({
-    status: response.status,
-    data: formatSkill(response.data),
+    body: JSON.stringify(toBackendPayload(skillData)),
+  }).then((skill) => ({
+    status: true,
+    data: formatSkill(skill),
   }));
 };
-
+ 
 import type { IPublicSkillsFeedResponse } from "../utils/types";
-
+ 
 /** API: ПУБЛИЧНАЯ ЛЕНТА НАВЫКОВ ДЛЯ ГЛАВНОЙ (навык + вложенный автор) */
 export const getSkillFeed = (params?: {
   page?: number;
@@ -154,10 +162,10 @@ export const getSkillFeed = (params?: {
   if (params?.limit) query.set("limit", String(params.limit));
   if (params?.search) query.set("search", params.search);
   const qs = query.toString();
-
+ 
   return request<IPublicSkillsFeedResponse>(`/skills${qs ? `?${qs}` : ""}`);
 };
-
+ 
 /** API: ДОБАВИТЬ НАВЫК В ИЗБРАННОЕ */
 export const addSkillToFavorites = (
   skillId: TId,
@@ -165,7 +173,7 @@ export const addSkillToFavorites = (
   request<{ message: string }>(`/skills/${skillId}/favorite`, {
     method: "POST",
   });
-
+ 
 /** API: УБРАТЬ НАВЫК ИЗ ИЗБРАННОГО */
 export const removeSkillFromFavorites = (
   skillId: TId,
@@ -173,3 +181,7 @@ export const removeSkillFromFavorites = (
   request<{ message: string }>(`/skills/${skillId}/favorite`, {
     method: "DELETE",
   });
+ 
+/** API: СПИСОК ИЗБРАННЫХ НАВЫКОВ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ */
+export const getFavoriteSkills = (): Promise<IPublicSkillCard[]> =>
+  request<IPublicSkillCard[]>("/skills/favorites");

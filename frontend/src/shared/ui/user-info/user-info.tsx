@@ -9,16 +9,25 @@ import { Icon } from "../icon";
 import { PasswordInput } from "../input";
 import type { UserInfoProps } from "./types";
 import type { OptionType } from "../dropdown/types";
-import { useDispatch } from "../../../services/store";
+import { useDispatch, useSelector } from "../../../services/store";
 import { updatePassword } from "../../../services/auth/actions";
 import { getCities, type ICity } from "../../../api/cityApi";
 import { useDebounce } from "../../hooks/useDebounce";
+import {
+  selectCategories,
+  selectSubCategories,
+  selectSubCategoriesByCategoryId,
+} from "../../../services/category/slice";
+import {
+  fetchCategories,
+  fetchSubCategories,
+} from "../../../services/category/actions";
 import styles from "./user-info.module.css";
 
 const genderOptions: OptionType[] = [
-  { value: "male", title: "Мужской" },
-  { value: "female", title: "Женский" },
-  { value: "other", title: "Другой" },
+  { value: "MALE", title: "Мужской" },
+  { value: "FEMALE", title: "Женский" },
+  { value: "UNSPECIFIED", title: "Другой" },
 ];
 
 const validatePassword = (password: string): string => {
@@ -50,12 +59,65 @@ export const UserInfo: FC<UserInfoProps> = ({
 }) => {
   const dispatch = useDispatch();
 
+  const categories = useSelector(selectCategories);
+  const subCategories = useSelector(selectSubCategories);
+  const getSubcategoriesByCategoryId = useSelector(
+    selectSubCategoriesByCategoryId,
+  );
+
+  useEffect(() => {
+    dispatch(fetchCategories());
+    dispatch(fetchSubCategories());
+  }, [dispatch]);
+
   const [email, setEmail] = useState(user?.email ?? "");
   const [name, setName] = useState(user?.name ?? "");
   const [birthDate, setBirthDate] = useState(user?.birthDate ?? "");
   const [gender, setGender] = useState<OptionType | null>(user?.gender ?? null);
   const [city, setCity] = useState(user?.city ?? "");
+  const [cityId, setCityId] = useState<string | null>(user?.cityId ?? null);
   const [about, setAbout] = useState(user?.about ?? "");
+
+  const initialSubcategory = useMemo<OptionType | null>(() => {
+    if (!user?.wantToLearnSubcategoryId) {
+      return null;
+    }
+
+    const subcategory = subCategories.find(
+      (sub) => sub.id === user.wantToLearnSubcategoryId,
+    );
+
+    return subcategory
+      ? { value: subcategory.id, title: subcategory.name }
+      : null;
+  }, [user, subCategories]);
+
+  const initialCategory = useMemo<OptionType | null>(() => {
+    if (!user?.wantToLearnSubcategoryId) {
+      return null;
+    }
+
+    const subcategory = subCategories.find(
+      (sub) => sub.id === user.wantToLearnSubcategoryId,
+    );
+    const category = subcategory
+      ? categories.find((cat) => cat.id === subcategory.skillCategoryId)
+      : undefined;
+
+    return category ? { value: category.id, title: category.name } : null;
+  }, [user, subCategories, categories]);
+
+  const [categoryOverride, setCategoryOverride] = useState<
+    OptionType | null | undefined
+  >(undefined);
+  const [subcategoryOverride, setSubcategoryOverride] = useState<
+    OptionType | null | undefined
+  >(undefined);
+
+  const selectedCategory =
+    categoryOverride !== undefined ? categoryOverride : initialCategory;
+  const selectedSubcategory =
+    subcategoryOverride !== undefined ? subcategoryOverride : initialSubcategory;
 
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -90,10 +152,13 @@ export const UserInfo: FC<UserInfoProps> = ({
     };
   }, [debouncedCitySearch]);
 
-  const cityOptions: OptionType[] = useMemo(
-    () => cities.map((c) => ({ value: c.id, title: c.name })),
-    [cities],
-  );
+  const cityOptions: OptionType[] = useMemo(() => {
+    const loaded = cities.map((c) => ({ value: c.id, title: c.name }));
+    if (city && !loaded.some((option) => option.title === city)) {
+      return [{ value: cityId ?? city, title: city }, ...loaded];
+    }
+    return loaded;
+  }, [cities, city, cityId]);
 
   const selectedCityOption = useMemo(
     () => cityOptions.find((option) => option.title === city) ?? null,
@@ -106,7 +171,27 @@ export const UserInfo: FC<UserInfoProps> = ({
 
   const handleCityChange = (option: OptionType | null) => {
     setCity(option?.title ?? "");
+    setCityId(option?.value ?? null);
     setCitySearch("");
+  };
+
+  const availableSubcategories: OptionType[] = useMemo(() => {
+    if (!selectedCategory) {
+      return [];
+    }
+
+    return getSubcategoriesByCategoryId(selectedCategory.value).map(
+      (sub) => ({ value: sub.id, title: sub.name }),
+    );
+  }, [selectedCategory, getSubcategoriesByCategoryId]);
+
+  const handleCategoryChange = (option: OptionType | null) => {
+    setCategoryOverride(option);
+    setSubcategoryOverride(null);
+  };
+
+  const handleSubcategoryChange = (option: OptionType | null) => {
+    setSubcategoryOverride(option);
   };
 
   const handleSave = () => {
@@ -116,7 +201,9 @@ export const UserInfo: FC<UserInfoProps> = ({
       birthDate,
       gender,
       city,
+      cityId,
       about,
+      wantToLearnSubcategoryId: selectedSubcategory?.value ?? null,
     });
   };
 
@@ -289,6 +376,30 @@ export const UserInfo: FC<UserInfoProps> = ({
             searchable
             searchPlaceholder="Введите город"
             onSearchChange={handleCitySearchChange}
+          />
+        </div>
+
+        <div className={styles.field}>
+          <Dropdown
+            title="Категория навыка, которому хотите научиться"
+            placeholder="Выберите категорию"
+            options={categories.map((cat) => ({
+              value: cat.id,
+              title: cat.name,
+            }))}
+            selected={selectedCategory}
+            onChange={handleCategoryChange}
+          />
+        </div>
+
+        <div className={styles.field}>
+          <Dropdown
+            title="Подкатегория навыка, которому хотите научиться"
+            placeholder="Выберите подкатегорию"
+            options={availableSubcategories}
+            selected={selectedSubcategory}
+            onChange={handleSubcategoryChange}
+            disabled={!selectedCategory}
           />
         </div>
 

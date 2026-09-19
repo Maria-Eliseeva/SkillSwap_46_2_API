@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { setSearchQuery } from "../../services/filter/slice.ts";
 import { useDispatch, useSelector } from "../../services/store.ts";
@@ -13,11 +13,9 @@ import { ProfileMenu } from "../../shared/ui/profile-menu";
 import { Search } from "../../shared/ui/search";
 import { SkillCategoryGroup } from "../../shared/ui/skill-category-group";
 import type { TSkillCategoryProps } from "../../shared/ui/skill-category/types";
-import { DeveloperCardGroup } from "../developer-card";
 import styles from "./header.module.css";
 import { fetchLogout } from "../../services/auth/actions";
 import { HeaderIcons } from "../../shared/ui/header-icons";
-import { developers } from "../../shared/constants/developers";
  
  
 export function Header() {
@@ -29,9 +27,15 @@ export function Header() {
   const user = useSelector((state) => state.auth.currentUser);
   const categories = useSelector((state) => state.category.categories);
   const isCategoriesLoading = useSelector((state) => state.category.loading);
+  const hasTriedFetchingCategories = useRef(false);
 
   useEffect(() => {
-    if (categories.length === 0 && !isCategoriesLoading) {
+    if (
+      categories.length === 0 &&
+      !isCategoriesLoading &&
+      !hasTriedFetchingCategories.current
+    ) {
+      hasTriedFetchingCategories.current = true;
       dispatch(fetchCategories());
     }
   }, [categories.length, dispatch, isCategoriesLoading]);
@@ -41,7 +45,7 @@ export function Header() {
       categories.map((category) => ({
         title: category.name,
         iconName: "idea",
-        iconBackgroundColor: getCategoryColorById(category.id),
+        iconBackgroundColor: getCategoryColorById(category.id, categories),
         skills: category.subcategories.map((subcategory) => subcategory.name),
       })),
     [categories],
@@ -71,19 +75,9 @@ export function Header() {
       <nav className={styles.nav} aria-label="Основная навигация">
         <ul className={styles.navList}>
           <li>
-            <Popover
-              trigger={
-                <Button variant="text" className={styles.navLink}>
-                  О проекте
-                </Button>
-              }
-              position="bottom"
-              offset={8}
-              closeOnEscape={true}
-              closeOnOverlayClick={true}
-            >
-              <DeveloperCardGroup developers={developers} />
-            </Popover>
+            <Button variant="text" className={styles.navLink}>
+              О проекте
+            </Button>
           </li>
  
           <li>

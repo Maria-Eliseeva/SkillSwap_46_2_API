@@ -3,18 +3,25 @@ import type { UploadResponse } from "../utils/types.ts";
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 МБ
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
- 
-export const uploadImage = async (file: File): Promise<UploadResponse> => {
+
+export const validateImageFile = (file: File): string | null => {
   if (!ALLOWED_TYPES.includes(file.type)) {
-    throw new Error(
-      "Поддерживаются только изображения: JPEG, PNG, WEBP, GIF",
-    );
+    return "Поддерживаются только изображения: JPEG, PNG, WEBP, GIF";
   }
- 
+
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    throw new Error("Файл слишком большой — максимум 2 МБ");
+    return "Файл слишком большой — максимум 2 МБ";
   }
- 
+
+  return null;
+};
+
+export const uploadImage = async (file: File): Promise<UploadResponse> => {
+  const validationError = validateImageFile(file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
   const formData = new FormData();
   formData.append("file", file);
   return await request("/files/upload", {

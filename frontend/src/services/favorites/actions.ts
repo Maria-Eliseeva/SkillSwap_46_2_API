@@ -1,24 +1,38 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
   addSkillToFavorites,
+  getFavoriteSkills,
   removeSkillFromFavorites,
 } from "../../api/skillApi";
-import type { TId } from "../../utils/types";
+import type { IPublicSkillCard } from "../../utils/types";
+
 
 export const toggleFavoriteSkill = createAsyncThunk(
   "favorites/toggle",
   async ({
-    skillId,
+    skill,
     isCurrentlyFavorite,
   }: {
-    skillId: TId;
+    skill: IPublicSkillCard;
     isCurrentlyFavorite: boolean;
   }) => {
     if (isCurrentlyFavorite) {
-      await removeSkillFromFavorites(skillId);
-      return { skillId, isFavorite: false };
+      await removeSkillFromFavorites(skill.id);
+      return { skill, isFavorite: false };
     }
-    await addSkillToFavorites(skillId);
-    return { skillId, isFavorite: true };
+    await addSkillToFavorites(skill.id);
+    return { skill, isFavorite: true };
+  },
+);
+
+
+export const fetchFavoriteSkills = createAsyncThunk(
+  "favorites/fetchList",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getFavoriteSkills();
+    } catch (err) {
+      return rejectWithValue(err);
+    }
   },
 );

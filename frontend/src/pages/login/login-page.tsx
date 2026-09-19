@@ -4,31 +4,69 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector, type RootState } from "../../services/store";
 import { fetchLogin, fetchProfile } from "../../services/auth/actions";
 import { handleError } from "../../utils/errors/errorUtils";
- 
+import { getYandexOAuthStatus } from "../../api/authApi";
+
 export const Login: FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
- 
+  const [isYandexLoginEnabled, setIsYandexLoginEnabled] = useState<
+    boolean | null
+  >(null);
+
   const { currentUser } = useSelector((state: RootState) => state.auth);
- 
+
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
- 
+
   const from = (location.state as { from?: string })?.from || "/";
- 
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getYandexOAuthStatus()
+      .then(({ enabled }) => {
+        if (isActive) {
+          setIsYandexLoginEnabled(enabled);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsYandexLoginEnabled(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const oauthStatus = new URLSearchParams(location.search).get("oauth");
+
+    if (oauthStatus !== "success") {
+      return;
+    }
+
+    void dispatch(fetchProfile())
+      .unwrap()
+      .catch((err: unknown) => {
+        setError(handleError(err).message);
+      });
+  }, [dispatch, location.search]);
+
   // Если пользователь уже авторизован, произойдет редирект на главную
   useEffect(() => {
     if (currentUser) {
       navigate(from, { replace: true });
     }
   }, [currentUser, navigate, from]);
- 
+
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
     setError(null);
- 
+
     try {
       await dispatch(fetchLogin({ email, password })).unwrap();
       // POST /auth/login отдаёт только {id, email, role, name} — сразу
@@ -39,7 +77,15 @@ export const Login: FC = () => {
       setError(handleError(err).message);
     }
   };
- 
+
+  const handleYandexLogin = () => {
+    if (isYandexLoginEnabled !== true) {
+      return;
+    }
+
+    window.location.assign("/api/auth/yandex");
+  };
+
   return (
     <LoginUI
       errorText={error || ""}
@@ -48,6 +94,8 @@ export const Login: FC = () => {
       password={password}
       setPassword={setPassword}
       handleSubmit={handleSubmit}
+      onYandexLogin={handleYandexLogin}
+      isYandexLoginEnabled={isYandexLoginEnabled}
     />
   );
 };

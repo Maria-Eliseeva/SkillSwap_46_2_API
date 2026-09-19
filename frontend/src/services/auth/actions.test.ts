@@ -44,6 +44,7 @@ const mockUser: IUserProfile = {
   avatar: "avatar.png",
   likesSkillsIds: [],
   userSkill: "",
+  skills: [],
   interestedSkillsSubcategoriesIds: [],
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
@@ -117,6 +118,7 @@ describe("auth thunks", () => {
         avatar: "",
         likesSkillsIds: [],
         userSkill: "",
+        skills: [],
         interestedSkillsSubcategoriesIds: [],
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
@@ -207,9 +209,12 @@ describe("auth thunks", () => {
         birthDate: "2000-01-01",
         gender: "MALE",
         city: "Moscow",
+        cityId: "city-1",
         avatar: "avatar.png",
+        aboutMe: "",
         likesSkillsIds: [],
         userSkill: "",
+        skills: [],
         interestedSkillsSubcategoriesIds: [],
         createdAt: "",
         updatedAt: "",
@@ -250,9 +255,12 @@ describe("auth thunks", () => {
         birthDate: "2000-01-01",
         gender: "MALE",
         city: "Moscow",
+        cityId: "city-1",
         avatar: "avatar.png",
+        aboutMe: "",
         likesSkillsIds: [],
         userSkill: "",
+        skills: [],
         interestedSkillsSubcategoriesIds: [],
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
@@ -268,6 +276,31 @@ describe("auth thunks", () => {
       );
 
       expect(result.meta.requestStatus).toBe("rejected");
+    });
+
+    it("fulfilled: приводит фронт-формат профиля к бэкенд-формату (#267)", async () => {
+      mockedUserApi.updateMyProfile.mockResolvedValue(
+        mockRealUser as unknown as IUserProfile,
+      );
+
+      const store = createTestStore({ currentUser: mockUser });
+      await store.dispatch(
+        fetchUpdateCurrentUser({
+          name: "Иван",
+          birthDate: "1995-11-23",
+          gender: "MALE",
+          aboutMe: "О себе",
+          cityId: "city-1",
+        }),
+      );
+
+      expect(mockedUserApi.updateMyProfile).toHaveBeenCalledWith({
+        name: "Иван",
+        birthdate: "1995-11-23",
+        gender: "MALE",
+        about: "О себе",
+        cityId: "city-1",
+      });
     });
   });
 });
